@@ -20,6 +20,7 @@
   <link rel="stylesheet" type="text/css" href="<%= file %>" /><% }); %>
 
   <!-- Latest compiled and minified jQuery -- before we load any of our own scripts, angular in particular -->
+  <!--  <script src="//code.jquery.com/jquery-2.1.1.min.js"></script> latest  -->
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 
   <!-- {Track:js}
@@ -34,13 +35,16 @@
   <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
   <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
+ 
 
 </head>
 <body>
+
 <!-- CORS doesn't work below IE8 so there's no hope -->
 <!--[if lt IE 8]>
 <p class="chromeframe">D'oh! You're using an outdated browser, man. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
 <![endif]-->
+
 <div class="navbar navbar-default navbar-static-top">
   <div class="container">
     <div class="navbar-header">
@@ -55,8 +59,7 @@
 <div id="themeContainer" class="familysearch_theme">
   <div fs-growl></div>
   <div fs-re-authenticate></div>
-  <div class="container" ui-view ></div>
+  <div class="container" ui-view ></div>        <!-- open default view using ui router-->
 </div>
-
 </body>
 </html>

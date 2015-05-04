@@ -1,3 +1,4 @@
+// describe test cases for researchWizard
 describe('AppController', function () {
   describe('isCurrentUrl', function () {
     var AppCtrl, $location, $scope;
@@ -11,7 +12,7 @@ describe('AppController', function () {
     }));
 
     it('should pass a dummy test', inject(function () {
-      expect(AppCtrl).toBeTruthy();
+      expect(AppCtrl).toBeTruthy();         //expect AppCtrl to be true
     }));
   });
 });

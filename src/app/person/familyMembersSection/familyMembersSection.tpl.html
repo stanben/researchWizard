@@ -1,0 +1,10 @@
+
+<div ng-repeat="family in spouseFamilies">
+    <div rw-family-members family="family" focus-id="person.id" preferred="preferredParents" drawController="rw-draw-families">
+    </div>
+</div>
+<div ng-repeat="family in parentFamilies">
+    <div rw-family-members family="family" focus-id="person.id" preferred="preferredParents" drawController="rw-draw-parent-families">
+    </div>
+</div>
+
