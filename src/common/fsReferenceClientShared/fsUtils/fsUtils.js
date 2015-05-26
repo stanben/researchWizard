@@ -175,11 +175,13 @@
           return _.omit(obj, function(value) { return _.isEmpty(value) && value !== 0; });
         },
 
-        getChildrenWithParentsId: function(children, childRelationships) {
-          return _.map(children, function(child) {
+        getChildrenWithParentsId: function (children, childRelationships) {
+          return _.map(children, function (child) {
+            var foundParents = _.find(childRelationships, function (rel) { return rel.$getChildId() === child.id; }).id;
             return {
               person: child,
-              parentsId: _.find(childRelationships, function(rel) { return rel.$getChildId() === child.id; }).id
+              //parentsId: 
+              parentsId: foundParents
             };
           });
         },

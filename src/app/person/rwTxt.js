@@ -8,14 +8,19 @@
 		//========================================================
 		// return true if string is defined and is not empty
 		rwTxt.isValid = function (string) {
-			if (string !== undefined && string !== '') {
+			if (string && string !== '') {
 				return true;
 			}
 			return false;
 		};
 
 		rwTxt.trimEndSpace = function (text) {
-			if (text.charAt(text.length - 1) === ' ') {
+			if (text.charAt(0) === ' ') {
+				if (text.charAt(text.length - 1) === ' ') {
+					return text.substring(1, text.length - 1);
+				}
+				return text.substring(1, text.length);
+			} else if (text.charAt(text.length - 1) === ' ') {
 				return text.substring(0, text.length - 1);
 			}
 			return text;

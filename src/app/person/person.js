@@ -33,7 +33,7 @@
 	});
 
 
-	rwApp.controller('PersonController', function ($scope, $state, $rootScope, person, sources, fsApi, fsUtils, fsCurrentUserCache, rwCtx, rwDrw) {
+	rwApp.controller('PersonController', function ($scope, $state, $rootScope, person, sources, fsApi, fsUtils, fsCurrentUserCache, rwCtx1, rwCtx2, rwDrw, rwPpl, rwEvH, rwActv) {
 
 /*
 		var sections = [
@@ -46,15 +46,21 @@
 			$scope.states[section] = { value: section === 'lifeSketch' ? 'closed' : 'open' };
 		});
 */
-		var canvas = angular.element.find('canvas')[0];
-		var ctx = canvas.getContext('2d');
-		rwCtx.setCanvas(canvas);
-		rwCtx.setContext(ctx);
+		var canvas2 = angular.element.find('#canvas2')[0];
+		var ctx2 = canvas2.getContext('2d');
+		rwCtx2.setCanvas(canvas2);
+		rwCtx2.setContext(ctx2);
+		var canvas1 = angular.element.find('#canvas1')[0];
+		var ctx1 = canvas1.getContext('2d');
+		rwCtx1.setCanvas(canvas1);
+		rwCtx1.setContext(ctx1);
+		
 		$scope.person = person;
 		$scope.sources = sources;
+		$scope.rwEvH = rwEvH;
 
-		rwDrw.background(person);
-		rwDrw.actPerson(person);
+		var personId = rwPpl.addPerson(person);
+		rwActv.change(personId);
 
 		sources.forEach(function (source) {
 			fsUtils.mixinStateFunctions($scope, source);
