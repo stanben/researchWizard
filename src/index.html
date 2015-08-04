@@ -131,26 +131,29 @@
         <div id="navbar-msg"
             class="navbar-header" style="padding:4px;margin:10px 8px 4px;border: 3px solid #668877;border-radius: 5px;background-color:#DDEEDD;">
                 <p >Welcome to sourceLink {{environment}}: Select <i style ="color:#BEF0FF; background-color:#428BCA;">Sign In to familySearch</i> to load data from Family Tree and get started!</p>
-        </div>	
+        </div>  
         <div class="collapse navbar-collapse header-collapse">
                 
-            
-            <div id="buttons", class="nav navbar-nav navbar-right" hidden>
+        
+            <div id="buttons", class="nav navbar-nav pull-right" hidden>
+       
                 <button id="change-id" data-ng-click="changeID()"
                         title="Enter record Id to change to different person"
-                        style="padding:4px;margin:10px 8px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
-                        class="btn btn-default navbar-btn">
-                    Change ID
-                </button>
+                        style="padding:4px;margin:10px 6px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
+                        class="btn btn-default navbar-btn">Change ID</button>
+                
                 <button id="view-in-fs"  data-ng-click="viewInFS()"
                     title="View the current person within FamilySearch"
-                    style="padding:4px;margin:10px 8px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
+                    style="padding:4px;margin:10px 6px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
                     class="btn btn-default navbar-btn">View In FS</button>
 
+               
                 <button id="logout-button"  data-ng-click="logout()"
                         title="Sign-out of FamilySearch"
-                        style="padding:4px;margin:10px 28px 0px 8px;border: 3px solid #667799;background-color:#DDDDFF;"
+                        style="padding:4px;margin:10px 6px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
                         class="btn btn-default navbar-btn">Sign Out</button>
+              
+            
             </div>
         </div>
     </div>
