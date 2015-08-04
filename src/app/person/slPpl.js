@@ -1,9 +1,10 @@
-﻿(function () {
+(function () {
 	'use strict';
-	var rwApp = angular.module('researchWizard');
+	var slApp = angular.module('sourceLink');
 
 	// factory for managing all visited people
-	rwApp.factory('rwPpl', ['$window','rwTxt', function (window,rwTxt) {
+	slApp.factory('slPpl', ['$window', 'fsApi', 'slCtry', 'slTxt', 'slSel', 'slFix', 'slSrc', 'slSrcX', 'alert',
+		function (window, fsApi, slCtry, slTxt, slSel, slFix, slSrc, slSrcX, alert) {
 		
 		//================================================================
 		// Persons data structure
@@ -26,36 +27,40 @@
 		//			children: [personId, ...]
 		//			}
 		var persons = new Map();	// map to person by person.id
-		var sources = new Map();	// map of sources by sourceRef.id
-		var rwPpl = {};
+		
+		var slPpl = {};
 
-		//================================================================
-		// event interface methods
-
-		// Create event object
-		var event = function (dateStrg, placeStrg) {
-			var date = splitDate(dateStrg);
-			var place = splitPlace(placeStrg);
-			if (!date && !place) {
-				return undefined;
-			}
-			return {
-				'date': date,
-				'place': place
-			};
+		var reportCountryNotFound = function(person,country,eventType) {
+			var evName = slSel.eventName(eventType);
+			var message = person.name[0] + ' ' + person.name[1] +
+				' is missing Country in ' + evName + ' place: ' +
+				country + ' is not a country.';
+			var newFix = slFix.add(message);
+//			if (newFix) {
+//				alert(message);
+//			}
 		};
 
-		rwPpl.copyEvent = function (event) {
+		slPpl.copyEvent = function (person,eventType,event) {
 			if (!event) {
 				return event;
 			}
 			var date = !event.date ? undefined :
-					[event.date[0], event.date[1]];
+					event.date.slice(0, event.date.length);
 			var place;
 			if (event.place) {
-				place = [];
-				for (var i = 0; i < event.place.length; i++) {
-					place.push(event.place[i]);
+				place = event.place.slice(0,event.place.length);
+				var plast = event.place.length - 1;
+				var cId = slCtry.countryId(event.place[plast]);
+				if (cId === -1) {
+					reportCountryNotFound(person, event.place[plast], eventType);
+				}
+				if (cId >= 0) {
+					place[plast] = cId;
+					if (plast > 0) {
+						var sId = slCtry.stateId(cId, event.place[--plast]);
+						place[plast] = sId;
+					}
 				}
 			}
 			return {
@@ -64,34 +69,34 @@
 			};
 		};
 
-		rwPpl.noEvent = function (event) {
+		slPpl.noEvent = function (event) {
 			return !event;
 		};
 
 
-		rwPpl.noDate = function (event) {
+		slPpl.noDate = function (event) {
 			return !event || !event.date ||
 					event.date.length === 0;
 		};
 
-		rwPpl.noPlace = function (event) {
+		slPpl.noPlace = function (event) {
 			return !event || !event.place ||
 					event.place.length === 0 || event.place[0] === '';
 		};
 
-		rwPpl.noMonth = function (event) {
-			return rwPpl.noDate(event) || event.date[0] === '';
+		slPpl.noMonth = function (event) {
+			return slPpl.noDate(event) || event.date[0] === '';
 		};
 
-		rwPpl.noYear = function (event) {
-			return rwPpl.noDate(event) || event.date[1] === '';
+		slPpl.noYear = function (event) {
+			return slPpl.noDate(event) || event.date.length < 3;
 		};
 
-		rwPpl.year = function (event) {
-			if (rwPpl.noYear(event)) {
+		slPpl.year = function (event) {
+			if (slPpl.noYear(event)) {
 				return undefined;
 			}
-			return event.date[1];
+			return event.date[2].toString();
 		};
 
 
@@ -198,64 +203,10 @@
 			return '';
 		};
 
-		var splitDate = function (date) {
-			var results;	// monthDay, year
-			if (!rwTxt.isValid(date)) {
-				return results;
-			}
-			var parts = date.split(' ');
-			var lastEntry = parts[parts.length - 1];
-			if (parts.length > 3 || parts.length === 3 && isNaN(lastEntry)) {
-				window.alert('Invalid date format: ' + date);
-				return results;
-			}
-			if (parts.length === 3) {
-				if (isNaN(parts[1])) {
-					if (!isNaN(parts[0])) {
-						return [parts[0] + ' ' + parts[1], parts[2]];
-					}
-				} else {
-					if (isNaN(parts[0])) {
-						return [parts[1] + ' ' + parts[0], parts[2]];
-					}
-				}
-				window.alert('Invalid date format: ' + date);
-				return results;
-			}
-			if (!isNaN(lastEntry)) {
-				if (parts.length > 1) {
-					return [parts[0],lastEntry];
-				}
-				return ['',lastEntry];
-			} else if (parts.length > 1) {
-				return [parts[0] + ' ' + parts[1],''];
-			}
-			return [parts[0],''];
-		};
-
-		var splitPlace = function (place) {
-			var results;	// town county state country or some subset
-			if (!rwTxt.isValid(place)) {
-				return results;
-			}
-			var parts = place.split(',');
-			if (parts.length === 0) {
-				return results;
-			}
-			if (parts.length > 4) {
-				window.alert('Invalid Place Format: ' + place);
-				return results;
-			}
-			for (var i = 0; i < parts.length; i++) {
-				parts[i] = rwTxt.trimEndSpace(parts[i]);
-			}
-			return parts;
-		};
-
 
 		var marriageEvent = function(coupleFS) {
 			if (coupleFS) {
-				return event(getMarriageDate(coupleFS), getMarriagePlace(coupleFS));
+				return slTxt.event(getMarriageDate(coupleFS), getMarriagePlace(coupleFS));
 			}
 			return undefined;
 		};
@@ -264,8 +215,9 @@
 			if (childrenFS) {
 				var results = [];
 				for (var i = 0; i < childrenFS.length; i++) {
-					var childId = rwPpl.addPerson(childrenFS[i].person);
+					var childId = slPpl.addPerson(childrenFS[i].person);
 					if (childId) {
+						slPpl.getSources(childId);
 						results.push(childId);
 					}
 				}
@@ -292,9 +244,12 @@
 			var spouseId;
 			if (familyFS) {
 				if (familyFS.husband && familyFS.husband.id === personId) {
-					spouseId = rwPpl.addPerson(familyFS.wife);
+					spouseId = slPpl.addPerson(familyFS.wife);
 				} else {
-					spouseId = rwPpl.addPerson(familyFS.husband);
+					spouseId = slPpl.addPerson(familyFS.husband);
+				}
+				if (spouseId) {
+					slPpl.getSources(spouseId);
 				}
 			} else if (coupleFS) {
 				if (coupleFS.person1.resourceId === personId) {
@@ -306,7 +261,7 @@
 			var spouseChildren = children(childrenFS);
 			if (!spouseId) {
 				if (spouseChildren.length > 0) {
-					var child = rwPpl.getPerson(spouseChildren[0]);
+					var child = slPpl.getPerson(spouseChildren[0]);
 					spouseId = getSpouse(personId, child);
 				}
 			}
@@ -321,8 +276,14 @@
 			var husbandId;
 			var wifeId;
 			if (familyFS) {
-				husbandId = rwPpl.addPerson(familyFS.husband);
-				wifeId = rwPpl.addPerson(familyFS.wife);
+				husbandId = slPpl.addPerson(familyFS.husband);
+				if (husbandId) {
+					slPpl.getSources(husbandId);
+				}
+				wifeId = slPpl.addPerson(familyFS.wife);
+				if (wifeId) {
+					slPpl.getSources(wifeId);
+				}
 			}
 			return {
 				'husband': husbandId,
@@ -334,11 +295,11 @@
 
 		
 
-		rwPpl.addPerson = function (personFS) {
+		slPpl.addPerson = function (personFS) {
 			if (!personFS) {
 				return undefined;
 			}
-			var foundPerson = rwPpl.getPerson(personFS.id);
+			var foundPerson = slPpl.getPerson(personFS.id);
 			if (!foundPerson) {
 				var person = {
 					'id': personFS.id,
@@ -346,31 +307,32 @@
 					'name': [getGivName(personFS),
 							getFamName(personFS)],
 					'living': personFS.living,
-					'birth': event(getBirthDate(personFS), getBirthPlace(personFS)),
-					'crstn': event(getCrstnDate(personFS), getCrstnPlace(personFS)),
-					'death': event(getDeathDate(personFS), getDeathPlace(personFS)),
+					'birth': slTxt.event(getBirthDate(personFS), getBirthPlace(personFS)),
+					'crstn': slTxt.event(getCrstnDate(personFS), getCrstnPlace(personFS)),
+					'death': slTxt.event(getDeathDate(personFS), getDeathPlace(personFS)),
 					'parents': undefined,
 					'spouses': undefined,
-					'sources': undefined
+					'sources': undefined,
+					'getPerson': slPpl.getPerson
 				};
 				persons.set(person.id, person);
 			}
 			return personFS.id;
 		};
 
-		rwPpl.getPerson = function (personId) {
+		slPpl.getPerson = function (personId) {
 			return personId ? persons.get(personId) : undefined;
 		};
 
 		/*
-		rwPpl.deletePerson = function (personId) {
+		slPpl.deletePerson = function (personId) {
 			persons.delete(personId);
 		};
 		*/
 
 
-		rwPpl.addSpouseFamily = function (personID, familyFS, coupleFS, childrenFS) {
-			var person = rwPpl.getPerson(personID);
+		slPpl.addSpouseFamily = function (personID, familyFS, coupleFS, childrenFS) {
+			var person = slPpl.getPerson(personID);
 			if (!person.spouses) {
 				person.spouses = [];
 			}
@@ -378,8 +340,8 @@
 			return person.spouses.length - 1;
 		};
 
-		rwPpl.addParentFamily = function (personID, familyFS, coupleFS, childrenFS) {
-			var person = rwPpl.getPerson(personID);
+		slPpl.addParentFamily = function (personID, familyFS, coupleFS, childrenFS) {
+			var person = slPpl.getPerson(personID);
 			if (!person.parents) {
 				person.parents = [];
 			}
@@ -387,11 +349,116 @@
 			return person.parents.length - 1;
 		};
 
-		rwPpl.addSource = function(sourceId, source) {
-			sources.set(sourceId, source);
+		
+
+		slPpl.openTab = function (url) {
+			var newTab = window.open(url, '_blank');
+			if (newTab) {
+				if (window.focus) {
+					newTab.focus();
+				} else {
+					alert('window.focus is undefined');
+				}
+			} else {
+				alert('failure to create new Tab at url: ' + url);
+			}
+			return newTab;
 		};
 
-		return rwPpl;
+		var sourcesPerPerson = new Map();		// key is personId value = [sources count]
+		var sourcesPerPersonDone = false; 
+		
+
+		var notifySourceReqDone = function () {
+			// All sources are done if all numSources in sourcesPerPerson
+			// are >= 0;
+			var allDone = true;
+			var sppIter = sourcesPerPerson.values();
+			for (; ;) {
+				var sppVal = sppIter.next();
+				if (sppVal.done) {
+					break;
+				}
+				if (sppVal.value[0] < 0) {
+					allDone = false;
+					return;
+				}
+			}
+			slSrc.done(sourcesPerPerson);
+			sourcesPerPerson.clear();
+		};
+
+		slPpl.personComplete = function() {
+			sourcesPerPersonDone = true;
+		};
+		var personSources = [];
+
+		slPpl.installPersonSources = function () {
+			var len = personSources.length;
+			for (var i = 0; i < len; i++) {
+				var ps = personSources[i];
+				var person = slPpl.getPerson(ps[0]);
+				if (person) {
+					slSrc.addPersonSource(person, [ps[1], ps[2]]);
+				} else {
+					alert('addSourceId to nonExistant person: ' + ps[0]);
+				}
+			}
+			personSources.length = 0;
+		};
+
+		var pushSourceId = function (personId, sourceId, sourcePersonId) {
+			personSources.push([personId, sourceId, sourcePersonId]);
+			
+		};
+
+		var numGetSrcs = 0;
+		var numSrcsReturned = 0;
+
+		slPpl.getSources = function (persId, drawSources, drawAttPhrase) {
+			if (drawSources) {
+				// Starting new set of sources reset sourcesPerPerson
+				sourcesPerPerson.clear();
+				sourcesPerPersonDone = false;
+				numGetSrcs = numSrcsReturned = 0;
+				slSrc.init(drawSources,drawAttPhrase);
+				slSrcX.init();
+			}
+			var person = slPpl.getPerson(persId);
+			if (person && person.sources) {
+				return;
+			}
+			if (sourcesPerPerson.get(persId)) {
+				return;
+			}
+			sourcesPerPerson.set(persId, [-1]);
+			++numGetSrcs;
+			fsApi.getPersonSourcesQuery(persId).then(function (response) {
+				++numSrcsReturned;
+				var numSources = 0;
+				var sourceRefs = response.getSourceRefs();
+				var i,len;
+				len = sourceRefs.length;
+				for (i = 0; i < len; i++) {
+					var sourceRef = sourceRefs[i];
+					var description = response.getSourceDescription(sourceRef.$sourceDescriptionId);
+					var srcInfo = slSrc.info(persId, sourceRef, description, pushSourceId);
+					if (description.about && description.about.indexOf('familysearch.org') >= 0) {
+						slSrc.load(srcInfo,person.sources ? person.sources.length : undefined);
+						++numSources;
+					} else {
+						slSrcX.extract(srcInfo, person);
+					}
+				}	
+				var sppVal = sourcesPerPerson.get(persId);
+				sppVal[0] = numSources;
+				if (sourcesPerPersonDone && numGetSrcs === numSrcsReturned) {
+					notifySourceReqDone();
+				}
+			});
+		};
+
+		return slPpl;
 		
 	}]);
 })();

@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  angular.module('researchWizard')
+  angular.module('sourceLink')
     .config(function ($stateProvider) {
       $stateProvider.state('source-box', {
         url: '/source-box?personId&coupleId&parentsId',

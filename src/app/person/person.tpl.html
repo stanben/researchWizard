@@ -1,26 +1,16 @@
 
-<canvas id="canvas1"></canvas>
+<div id="underlay" hidden>
+    <div id="underDisplay"></div>
+    <div id="sourceFile"  style="display: none;"></div>
+    <button id="return" data-ng-click="returnToCanvas()"
+            title="click to clear data and return to graph"
+            style="padding:4px;border: 3px solid #998844;background-color:#FFEE66;">
+        RETURN
+    </button>
+</div>
+<canvas id="canvas1" hidden></canvas>
 <canvas id="canvas2" class="canvas-transparent"
-        ng-mouseup="rwEvH.mouseUp($event)"
-        ng-mousemove="rwEvH.mouseMove($event)"
-        resize>
-
+        data-ng-mouseup="slInpt.mouseUp($event)"
+        data-ng-mousemove="slInpt.mouseMove($event)"
+        resize hidden>
 </canvas>
-   
-
-
-
-<!--
- <canvas id="canvas" width="1200" height="800" style="border:1px solid #000000;"> </canvas>
-<div rw-draw-person person="person"></div>
-<div rw-draw-families person="person" spfamilies="{{spouseFamilies}}"></div>
-<div rw-draw-parent-family person="person" husband="{{family.husband}}"
-     wife="{{family.wife}}" children="{{children}}"></div>
-<div rw-sources-section person="person" sources="sources" state="states['sources']"></div>
-
-<div rw-draw-families person="person" spFamilies="{{spouseFamilies}}"></div>
-<div rw-draw-parent-family person="person" husband="{{family.husband}}"
-        wife="{{family.wife}}" children="{{children}}"></div>
-<div rw-draw-attached-sources></div>
-<div rw-draw-found-sources></div>
--->

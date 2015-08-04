@@ -1,12 +1,12 @@
 ﻿<!DOCTYPE html>
 <!--suppress XmlUnusedNamespaceDeclaration -->
-<html xmlns:ng="http://angularjs.org" lang="en" id="ng-app" ng-app="researchWizard" ng-controller="AppController">
+<html xmlns:ng="http://angularjs.org" lang="en" id="ng-app" data-ng-app="sourceLink" data-ng-controller="AppController">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- TODO setting page title doesn't seem to be working; do we need to set it on root scope? -->
-    <title>researchWizard</title>
+    <title>sourceLink</title>
 
     <!-- Latest compiled and minified bootstrap CSS -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
@@ -28,10 +28,12 @@
     <link rel="apple-touch-icon-precomposed" sizes="152x152" href="apple-touch-icon-152x152.png" />
     -->
     <link rel="icon" type="image/png" href="assets/favicon-196x196.png" sizes="196x196" />
+    <link rel="icon" type="image/png" href="assets/favicon-128x128.png" sizes="128x128" />
     <link rel="icon" type="image/png" href="assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/png" href="assets/favicon-32x32.png" sizes="32x32" />
     <link rel="icon" type="image/png" href="assets/favicon-16x16.png" sizes="16x16" />
-    <link rel="icon" type="image/png" href="assets/favicon-128x128.png" sizes="128x128" />
+    <link rel="shortcut icon" type="image/png" href="assets/favicon.ico" />
+   
     <!--
     <meta name="application-name" content="&nbsp;" />
     <meta name="msapplication-TileColor" content="#FFFFFF" />
@@ -41,8 +43,8 @@
     <meta name="msapplication-wide310x150logo" content="mstile-310x150.png" />
     <meta name="msapplication-square310x310logo" content="mstile-310x310.png" />
     -->
-    <!-- compiled CSS --><% styles.forEach( function ( file ) { %>
-    <link rel="stylesheet" type="text/css" href="<%= file %>" /><% }); %>
+    <!-- compiled CSS -->
+    <link rel="stylesheet" type="text/css" href="assets/sourceLink-0.0.1.css" />
 
     <!-- Latest compiled and minified jQuery -- before we load any of our own scripts, angular in particular -->
     <!--  <script src="//code.jquery.com/jquery-2.1.1.min.js"></script> latest  -->
@@ -51,8 +53,60 @@
     <!-- {Track:js}
     <script type="text/javascript" src="//dl1d2m8ri9v3j.cloudfront.net/releases/1.2.5/tracker.js" data-customer="52c8344eea344ce7864d3ffffce1f0d3"></script>
     -->
-    <!-- compiled JavaScript --><% scripts.forEach( function ( file ) { %>
-    <script type="text/javascript" src="<%= file %>"></script><% }); %>
+    <!-- compiled JavaScript -->
+    <script type="text/javascript" src="vendor/angular/angular.js"></script>
+    <script type="text/javascript" src="vendor/angular-bootstrap-jbruni/ui-bootstrap-tpls.min.js"></script>
+    <script type="text/javascript" src="vendor/angular-ui-router/release/angular-ui-router.js"></script>
+    <script type="text/javascript" src="vendor/lodash/dist/lodash.compat.js"></script>
+    <script type="text/javascript" src="vendor/familysearch-javascript-sdk/familysearch-javascript-sdk.js"></script>
+    <script type="text/javascript" src="vendor/moment/moment.js"></script>
+    <script type="text/javascript" src="vendor/angular-moment/angular-moment.js"></script>
+    <script type="text/javascript" src="vendor/hamsterjs/hamster.js"></script>
+    <script type="text/javascript" src="vendor/angular-mousewheel/mousewheel.js"></script>
+    <script type="text/javascript" src="vendor/angular-pan-zoom/build/panzoom.0.1-snapshot.min.js"></script>
+    <script type="text/javascript" src="vendor/ngInfiniteScroll/build/ng-infinite-scroll.js"></script>
+    <script type="text/javascript" src="vendor/angular-growl-v2/build/angular-growl.js"></script>
+    <script type="text/javascript" src="vendor/sweetalert/sweetalert.min.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsReferenceClientShared.js"></script>
+    <script type="text/javascript" src="src/app/app.js"></script>
+    <script type="text/javascript" src="src/app/home/home.js"></script>
+    <script type="text/javascript" src="src/app/person/person.js"></script>
+    <script type="text/javascript" src="src/app/person/slActv.js"></script>
+    <script type="text/javascript" src="src/app/person/slAsyn.js"></script>
+    <script type="text/javascript" src="src/app/person/slCtry.js"></script>
+    <script type="text/javascript" src="src/app/person/slCtx1.js"></script>
+    <script type="text/javascript" src="src/app/person/slCtx2.js"></script>
+    <script type="text/javascript" src="src/app/person/slDrw.js"></script>
+    <script type="text/javascript" src="src/app/person/slFix.js"></script>
+    <script type="text/javascript" src="src/app/person/slGeom.js"></script>
+    <script type="text/javascript" src="src/app/person/slInpt.js"></script>
+    <script type="text/javascript" src="src/app/person/slPpl.js"></script>
+    <script type="text/javascript" src="src/app/person/slSel.js"></script>
+    <script type="text/javascript" src="src/app/person/slSrc.js"></script>
+    <script type="text/javascript" src="src/app/person/slSrcX.js"></script>
+    <script type="text/javascript" src="src/app/person/slTxt.js"></script>
+    <script type="text/javascript" src="src/app/source-box/source-box.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsAgentCache/fsAgentCache.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsApi/fsApi.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsCurrentUserCache/fsCurrentUserCache.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsFilters/fsCustomFactTitle.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsFilters/fsDate.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsFilters/fsGedcomxLabel.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsGender/fsGender.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsGender/fsGenderEdit/fsGenderEdit.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsGender/fsGenderSummary/fsGenderSummary.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsGrowl/fsGrowl.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsHttpErrorNotifier/fsHttpErrorNotifier.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsLocation/fsLocation.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsReAuthenticate/fsReAuthenticate.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsReAuthenticateModal/fsReAuthenticateModal.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsUtils/fsChangeUtils.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsUtils/fsNameUtils.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsUtils/fsSourceUtils.js"></script>
+    <script type="text/javascript" src="src/common/fsReferenceClientShared/fsUtils/fsUtils.js"></script>
+    <script type="text/javascript" src="src/common/loDash/loDash.js"></script>
+    <script type="text/javascript" src="templates-common.js"></script>
+    <script type="text/javascript" src="templates-app.js"></script>
 
     <!--[if lt IE 9]>
     <script src="assets/es5-shim.min.js"></script>
@@ -65,16 +119,39 @@
     <!-- CORS doesn't work below IE8 so there's no hope -->
     <!-- [if lt IE 8] > <p class="chromeframe" > D'oh! You're using an outdated browser, man. <a href="http://browsehappy.com/" > Upgrade your browser today</a > or <a href="http://www.google.com/chromeframe/?redirect=true" > install Google Chrome Frame</a > to better experience this site.</p > <![endif] -->
     <div class="navbar navbar-default navbar-static-top">
-        <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">
-                    <img src="assets/favicon-32x32.png"> researchWizard
-                </a>
-                <span ng-show="busy" style="float: left; line-height: 50px">
-                    <i class="fa fa-spinner fa-spin"> </i>
-                </span>
+        <div class="navbar-header">
+            <a
+                class="navbar-brand" href="/">
+                <img src="assets/favicon-32x32.png"> source<strong>Link</strong>
+</a>
+            <span data-ng-show="busy" style="float: left; line-height: 50px">
+                <i class="fa fa-spinner fa-spin"> </i>
+            </span>
+        </div>
+        <div id="navbar-msg"
+            class="navbar-header" style="padding:4px;margin:10px 8px 4px;border: 3px solid #668877;border-radius: 5px;background-color:#DDEEDD;">
+                <p >Welcome to sourceLink {{environment}}: Select <i style ="color:#BEF0FF; background-color:#428BCA;">Sign In to familySearch</i> to load data from Family Tree and get started!</p>
+        </div>	
+        <div class="collapse navbar-collapse header-collapse">
+                
+            
+            <div id="buttons", class="nav navbar-nav navbar-right" hidden>
+                <button id="change-id" data-ng-click="changeID()"
+                        title="Enter record Id to change to different person"
+                        style="padding:4px;margin:10px 8px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
+                        class="btn btn-default navbar-btn">
+                    Change ID
+                </button>
+                <button id="view-in-fs"  data-ng-click="viewInFS()"
+                    title="View the current person within FamilySearch"
+                    style="padding:4px;margin:10px 8px 0px;border: 3px solid #667799;background-color:#DDDDFF;"
+                    class="btn btn-default navbar-btn">View In FS</button>
+
+                <button id="logout-button"  data-ng-click="logout()"
+                        title="Sign-out of FamilySearch"
+                        style="padding:4px;margin:10px 28px 0px 8px;border: 3px solid #667799;background-color:#DDDDFF;"
+                        class="btn btn-default navbar-btn">Sign Out</button>
             </div>
-            <div class="collapse navbar-collapse header-collapse"> </div>
         </div>
     </div>
     <div id="themeContainer" class="familysearch_theme">
@@ -83,5 +160,34 @@
         <div class="container" ui-view> </div>
         <!-- open default view using ui router-->
     </div>
+    <div id="description">
+        <p></p>
+        <p><strong>sourceLink</strong> is a tool used to view and evaluate sources of a person and his immediate family members.</p>
+        <p>
+            Within the navagation header at the top of the web page is an
+            <strong style="border: 3px solid #668877; background-color:#DDEEDD;">information box</strong> which provides hints as what to do as well as an information summary when an action is performed. 
+            At times sourceLink will shorten words for names and places in order to fit the space available within the web page.  When this word is selected, the information box will show the entire word.
+        </p>
+        <p>
+            The <strong>person area</strong> is set to a background color of
+            <strong style="background-color:#AACBDA;">blue</strong> if the reference person is male,
+            <strong style="background-color:#efbfbf;">pink</strong> if the reference person is female, or
+            <strong style="background-color:#c2c2c2;">grey</strong> if the reference person's gender is unknown.
+                The name and vital information associated with the reference person is at the top of the person area. Below the reference person and to the left is his spouse(s) and children of that spouse.
+                Below the reference person and to the right are his parents and siblings. Each piece of vital information in the person area is highlighted with a 
+            <strong style="outline:#ff0000;">red box outline</strong> when the mouse points at it. Clicking on a piece of vital information will select it which is displayed with
+            <strong style="background-color:#ff0000;">red fill</strong>. When selected, all of the sources which confirm this information are highlited.
+            if the <strong>ctrl</strong> key is pressed while selecting a piece of vital information, then the person associated with this information becomes the
+            <strong>reference person</strong> and all areas are updated to reflect the information associated with this change.
+        </p>
+        <p>
+            Within the region set to a background color of green: 
+            <strong style ="background-color:#40AD82;">attached sources</strong> are placed in a chronological order from birth to death.
+        </p>
+        <p>
+            Within the region set to a background color of tan: 
+            <strong style="background-color:#C3AD82;">possible sources</strong> are also placed in chronological order from birth to death.
+        </p>
+</div>
 </body>
 </html>

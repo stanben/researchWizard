@@ -1,5 +1,5 @@
 {
-  "name": "researchWizard",
+  "name": "sourceLink",
   "version": "0.0.1",
   "_comment": "Any dependencies added here require a manual edit to vendor_files in /Gruntfile.js",
   "dependencies": {

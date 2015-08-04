@@ -3,7 +3,6 @@
   "camelcase": true,
   "curly": true,
   "eqeqeq": true,
-  "es3": true,
   "forin": true,
   "immed": true,
   "latedef": "nofunc",
@@ -23,6 +22,11 @@
     "angular": false,
     "_": false,
     "console": false,
-    "setTimeout": false
+    "window": false,
+    "document": false,
+    "alert": false,
+    "prompt": false,
+    "setTimeout": false,
+    "sweetAlert": false
   }
 }

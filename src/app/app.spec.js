@@ -1,9 +1,9 @@
-// describe test cases for researchWizard
+// describe test cases for sourceLink
 describe('AppController', function () {
   describe('isCurrentUrl', function () {
     var AppCtrl, $location, $scope;
 
-    beforeEach(module('researchWizard'));
+    beforeEach(module('sourceLink'));
 
     beforeEach(inject(function ($controller, _$location_, $rootScope) {
       $location = _$location_;
@@ -16,4 +16,3 @@ describe('AppController', function () {
     }));
   });
 });
-
