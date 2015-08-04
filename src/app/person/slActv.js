@@ -102,6 +102,7 @@
 			};
 
 			var processFamilies = function (spouseFamilies) {
+				var drawFamilies = false;
 				for (var i = 0; i < spouseFamilies.length; i++) {
 					var family = spouseFamilies[i];
 					// if we haven't passed in the children or we haven't passed in a couple
@@ -126,11 +127,9 @@
 						var couple = family.couple;
 						var children = family.children;
 						if (family.husband && personId === family.husband.id || family.wife && personId === family.wife.id) {
-							var whichSpouse = slPpl.addSpouseFamily(personId, family, couple, children);
-							slDrw.spouseFamily(personId, whichSpouse);
+							slPpl.addSpouseFamily(personId, family, couple, children);
 						} else {
-							var whichParent = slPpl.addParentFamily(personId, family, couple, children);
-							slDrw.parentFamily(personId, whichParent);
+							slPpl.addParentFamily(personId, family, couple, children);
 						}
 					}
 				}
@@ -145,6 +144,7 @@
 						var parentFamilies = getParentFamilies(response);
 						processFamilies(spouseFamilies);
 						processFamilies(parentFamilies);
+						slDrw.actRest(person);
 						slSel.startSelection();
 						person.complete = true;
 						slPpl.personComplete();

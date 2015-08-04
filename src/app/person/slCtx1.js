@@ -1413,6 +1413,7 @@
 					textY = slCtx1.renderNameYearPl(child, childSelID, x, textY, secW, textHeight, lineSpace, select);
 					textY += lineSpace;
 				}
+				return textY;
 			};
 
 			var splitPhrase = function (parts, at) {

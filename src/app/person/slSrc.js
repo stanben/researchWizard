@@ -19,6 +19,7 @@
 			var sourcesComplete = 0;
 			var drawSourcesCB;
 			var drawAttPhraseCB;
+			var debugLog = false;
 
 			// sourcesLoadedPerPerson stores a count of every source loaded per each person
 			// processed.  This value is only set after all load requests have been performed. 
@@ -135,7 +136,9 @@
 						var value = sppVal.value[1];
 						var retValue = sourcesReturnedPerPerson.get(key);
 						if (!retValue || retValue[0] < value) {
-							console.log(key + ' ' + value + ':' + (retValue ? retValue[0] : '0'));
+							if (debugLog) {
+								console.log(key + ' ' + value + ':' + (retValue ? retValue[0] : '0'));
+							}
 							result = false;
 							break;
 						}
@@ -158,8 +161,10 @@
 							return;
 						}
 //					}
-					console.log('drawSourceCB:  sourcesComplete = ' + sourcesComplete);
-					printSourcesLoadedInfo();
+						if (debugLog) {
+							console.log('drawSourceCB:  sourcesComplete = ' + sourcesComplete);
+							printSourcesLoadedInfo();
+						}
 					drawSourcesCB();
 				}
 			};
@@ -171,13 +176,15 @@
 				} else {
 					++sourcesComplete;
 				}
-				var msg = sourcesComplete.toString() + ' Sources Complete';
-				if (totalSources) {
-					msg += ' of ' + totalSources;
-				}
-				drawAttPhraseCB(msg);
-				if (sourcesComplete % 10 === 0) {
-					printSourcesLoadedInfo();
+//				var msg = sourcesComplete.toString() + ' Sources Complete';
+//				if (totalSources) {
+//					msg += ' of ' + totalSources;
+//				}
+//				drawAttPhraseCB(msg);
+				if (debugLog) {
+					if (sourcesComplete % 10 === 0) {
+						printSourcesLoadedInfo();
+					}
 				}
 				checkSourcesComplete();
 			};
@@ -493,8 +500,10 @@
 //						slTxt.pprint(title + ' data', srcInfo.data);
 //						slTxt.pprint(title + ' peopleData', srcInfo.peopleData);
 //						slTxt.pprint(title + ' source', srcInfo.source);
-					//					}
-					console.log(srcInfo.persId + ' ' + srcInfo.source.title  + ' ' + srcInfo.source.id + ' ' + srcInfo.numPeople + '  complete');
+//					}
+					if (debugLog) {
+						console.log(srcInfo.persId + ' ' + srcInfo.source.title + ' ' + srcInfo.source.id + ' ' + srcInfo.numPeople + '  complete');
+					}
 					sourceComplete();
 				}
 			};
@@ -590,8 +599,10 @@
 				if (gender) {
 					person.gender = gender;
 				}
-				var name = person.name ? (person.name[0] + ' ' + person.name[1]) : 'undefined name';
-				console.log('addSourcePerson: ' + name);
+				if (debugLog) {
+					var name = person.name ? (person.name[0] + ' ' + person.name[1]) : 'undefined name';
+					console.log('addSourcePerson: ' + name);
+				}
 				var source = srcInfo.source;
 				source.people.push(person);
 				checkSourceDone(srcInfo);
@@ -599,12 +610,16 @@
 
 			var loadSourcePerson = function (srcInfo,personUrl,relation) {
 				var personId = slTxt.pathEnd(personUrl);
-				console.log('loadSourcePerson: ' + personId);
+				if (debugLog) {
+					console.log('loadSourcePerson: ' + personId);
+				}
 				http.get(personUrl).success(function (pdata, status/*, headers, config*/) {
 					if (srcInfo.source) {
 						if (pdata && status === 200) {
-							console.log('===========================================================================');
-							console.log('RETURN loadSourcePerson: ' + personId);
+							if (debugLog) {
+								console.log('===========================================================================');
+								console.log('RETURN loadSourcePerson: ' + personId);
+							}
 							srcInfo.peopleData.push(pdata);
 							addSourcePerson(srcInfo,personId,pdata,relation);
 						} else {
@@ -740,8 +755,10 @@
 			};
 
 			var loadSource = function (srcInfo, srcPersonId) {
-				console.log('===========================================================================');
-				console.log('Return: personId=' + srcInfo.persId + ' srcPersonId=' + srcPersonId);
+				if (debugLog) {
+					console.log('===========================================================================');
+					console.log('Return: personId=' + srcInfo.persId + ' srcPersonId=' + srcPersonId);
+				}
 				var data = srcInfo.data;
 				var sourceId = getSourceId(data);
 				if (sourceId) {
@@ -751,18 +768,24 @@
 						var person = slSrc.getSourcePerson(source, srcPersonId);
 						if (person) {
 							person.pid = srcInfo.persId;
-							console.log('source: ' + sourceId + ' already Loaded. NumPeople=' +
-								source.people.length + ' Finished');
+							if (debugLog) {
+								console.log('source: ' + sourceId + ' already Loaded. NumPeople=' +
+									source.people.length + ' Finished');
+							}
 							return;		// Source has already been loaded for this person
 						} else {
 							// The source record didn't reference this person
 							srcInfo.numPeople = source.people.length;
-							console.log('source: ' + sourceId + ' already Loaded. NumPeople=' +
-								source.people.length + ' Did not refernce srcPersonId=' + srcPersonId);
+							if (debugLog) {
+								console.log('source: ' + sourceId + ' already Loaded. NumPeople=' +
+									source.people.length + ' Did not refernce srcPersonId=' + srcPersonId);
+							}
 						}
 						srcInfo.source = source;
 					} else {
-						console.log('createSource: ' + sourceId);
+						if (debugLog) {
+							console.log('createSource: ' + sourceId);
+						}
 						createSource(srcInfo,sourceId);
 						if (!srcInfo.source) {
 							alert('###ERROR: failed to create source');
@@ -770,7 +793,9 @@
 						}
 					}
 					setOtherSourceInfo(srcInfo);
-					console.log(srcInfo.source.type + ': ' + srcInfo.source.title);
+					if (debugLog) {
+						console.log(srcInfo.source.type + ': ' + srcInfo.source.title);
+					}
 					loadSourcePeople(srcInfo, srcPersonId);
 				} else {
 					alert('###ERROR: sourceId undefined');
@@ -785,15 +810,19 @@
 				srcInfos.push(srcInfo);
 				var fileUrl = srcInfo.description.about;
 				var srcPersonId = slTxt.pathEnd(fileUrl);
-				console.log('===========================================================================');
-				console.log('slSrc.load: personId=' + srcInfo.persId + ' srcPersonId=' + srcPersonId);
+				if (debugLog) {
+					console.log('===========================================================================');
+					console.log('slSrc.load: personId=' + srcInfo.persId + ' srcPersonId=' + srcPersonId);
+				}
 				if (sourcePersonLoaded(srcPersonId)) {
 					// It is beleived that srcPersonId is unique for each source/person
 					// so if it already exists, then this source has been loaded.
 					if (!srcCount) {
 						console.log('###ERROR: Person already loaded but no sources');
 					}
-					console.log('ALREADY LOADED');
+					if (debugLog) {
+						console.log('ALREADY LOADED');
+					}
 					incrsourcesReturnedPerPerson(srcInfo.persId);
 					sourceComplete(srcCount);
 					return;
@@ -894,15 +923,18 @@
 					if (sppVal.done) {
 						break;
 					}
-					msg = 'Loading ' + sppVal.value[0] + ' = ' + sppVal.value[1];
-					console.log(msg);
+					if (debugLog) {
+						msg = 'Loading ' + sppVal.value[0] + ' = ' + sppVal.value[1];
+						console.log(msg);
+					}
 					totalSources += sppVal.value[1];
 					++len;
 				}
-				
-				msg = 'Loading ' + totalSources + ' sources attached to ' +
-							len + ' people.';
-				console.log(msg);
+				if (debugLog) {
+					msg = 'Loading ' + totalSources + ' sources attached to ' +
+								len + ' people.';
+					console.log(msg);
+				}
 			};
 
 			slSrc.done = function (sourcesPerPerson) {

@@ -443,12 +443,15 @@
 					var sourceRef = sourceRefs[i];
 					var description = response.getSourceDescription(sourceRef.$sourceDescriptionId);
 					var srcInfo = slSrc.info(persId, sourceRef, description, pushSourceId);
-					if (description.about && description.about.indexOf('familysearch.org') >= 0) {
-						slSrc.load(srcInfo,person.sources ? person.sources.length : undefined);
-						++numSources;
-					} else {
-						slSrcX.extract(srcInfo, person);
+					if (description.about) {
+						var idx = description.about.indexOf('familysearch.org');
+						if (idx >= 0 && idx <= 20) {
+							slSrc.load(srcInfo, person.sources ? person.sources.length : undefined);
+							++numSources;
+							continue;
+						}
 					}
+					slSrcX.extract(srcInfo, person);
 				}	
 				var sppVal = sourcesPerPerson.get(persId);
 				sppVal[0] = numSources;

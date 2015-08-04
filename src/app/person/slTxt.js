@@ -2,7 +2,7 @@
 	'use strict';
 	var slApp = angular.module('sourceLink');
 
-	slApp.factory('slTxt', function () {
+	slApp.factory('slTxt', [ 'alert', function (alert) {
 		var slTxt = {};
 
 		//========================================================
@@ -1083,6 +1083,6 @@ policies, either expressed or implied, of James Padolsey.
 		};
 
 		return slTxt;
-	});
+	}]);
 
 })();

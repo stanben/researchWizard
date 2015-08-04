@@ -235,25 +235,32 @@
 
 			slDrw.actRest = function (person) {
 				var i;
+				var textY;
+				var fontSize = 13;
+				var textHeight = slCtx1.setFontSize(fontSize);
 				if (person.spouses) {
+					textY = famAlign.y;
 					for (i = 0; i < person.spouses.length; i++) {
-						slDrw.spouseFamily(person.id, i);
+						textY = slDrw.spouseFamily(person.id, i, textY);
+						textY += textHeight;
 					}
 				}
 				if (person.parents) {
+					textY = famAlign.y;
 					for (i = 0; i < person.parents.length; i++) {
-						slDrw.parentFamily(person.id, i);
+						textY = slDrw.parentFamily(person.id, i, textY);
+						textY += textHeight;
 					}
 				}
 			};
 
-			slDrw.spouseFamily = function (actId,whichSpouse) {
+			slDrw.spouseFamily = function (actId,whichSpouse,tY) {
 				var fontSize = 13;
 				var textHeight = slCtx1.setFontSize(fontSize);
 				var lineSpace = textHeight;
 				var secW = famAlign.w / 2;
 				var x = align.persBox.left() + secW/2;
-				var textY = famAlign.y;
+				var textY = tY ? tY : famAlign.y;
 
 				secW -= slCtx1.shrinkW();
 
@@ -282,17 +289,17 @@
 				textY += lineSpace;
 				//fontSize = 3 * fontSize / 4;
 				var seqGrp = ['d' + spouceCnt++,'c'];
-				slCtx1.renderChildren(person.spouses[whichSpouse].children, seqGrp, x, textY, secW, textY, fontSize, select);
+				textY = slCtx1.renderChildren(person.spouses[whichSpouse].children, seqGrp, x, textY, secW, textY, fontSize, select);
+				return textY;
 			};
 
-			slDrw.parentFamily = function (actId, whichParent) {
+			slDrw.parentFamily = function (actId, whichParent, tY) {
 				var fontSize = 13;
 				var textHeight = slCtx1.setFontSize(fontSize);
 				var lineSpace = textHeight;
 				var secW = famAlign.w / 2;
 				var x = align.persBox.right() - secW/2;
-				var textY = famAlign.y;
-				
+				var textY = tY ? tY : famAlign.y;
 
 				secW -= slCtx1.shrinkW();
 
@@ -325,7 +332,8 @@
 				textY += lineSpace;
 				//fontSize = 3 * fontSize / 4;
 				var seqGrp = ['a' + parentCnt++,'s'];
-				slCtx1.renderChildren(person.parents[whichParent].children, seqGrp, x, textY, secW, textY, fontSize, select);
+				textY = slCtx1.renderChildren(person.parents[whichParent].children, seqGrp, x, textY, secW, textY, fontSize, select);
+				return textY;
 			};
 
 			slDrw.child = function (child) {
