@@ -13,7 +13,7 @@
 	});
 
 	slApp.controller('HomeController', function ($scope, $state, $rootScope, fsApi, fsCurrentUserCache) {
-		var startPersonId /* = 'KZZ5-C12'*/;
+		var startPersonId /* = 'K422-PFX'*/;
 		$scope.signIn = function () {
 			fsApi.getAccessToken().then(function() {
 				$rootScope.$emit('newSession');

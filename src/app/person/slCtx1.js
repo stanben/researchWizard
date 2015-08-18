@@ -1,8 +1,8 @@
 (function () {
 	'use strict';
 	var slApp = angular.module('sourceLink');
-	slApp.factory('slCtx1', ['$window', 'slTxt', 'slPpl', 'slCtx2', 'slSel', 'slCtry', 'slGeom', 'alert',
-		function ($window, slTxt, slPpl, slCtx2, slSel, slCtry, slGeom, alert) {
+	slApp.factory('slCtx1', ['$window', 'slTxt', 'slPpl', 'slCtx2', 'slSel', 'slCtry', 'slGeom', 'slCSS', 'alert',
+		function ($window, slTxt, slPpl, slCtx2, slSel, slCtry, slGeom, slCSS, alert) {
 
 			var canvas1; // Canvas where information of all people and sources is displayed
 			var ctx1;	// 2d context of canvas1
@@ -101,6 +101,13 @@
 				ctx1.stroke();
 			};
 
+			slCtx1.drawIcon = function (iconName, x, y, width, height) {
+				var icon = slCSS.icons[iconName];
+				if (icon) {
+					ctx1.drawImage(icon, x, y - width, width, height);
+				}
+			};
+
 			//========================================================================
 			// draw text at x,y in ctx1
 
@@ -132,10 +139,20 @@
 				return ctx1.measureText(text).width;
 			};
 
-			slCtx1.setTextStyle = function (fill, txtAlgn) {
+			slCtx1.setTextStyle = function (fill, txtAlgn, txtBslgn) {
 				ctx1.fillStyle = fill;
 				ctx1.textAlign = txtAlgn;
+				if (txtBslgn) {
+					ctx1.textBaseline = txtBslgn;
+				} else {
+					ctx1.textBaseline = 'alphabetic';
+				}
 			};
+
+			slCtx1.textRect = function (x, y, txtW, txtH) {
+				return slGeom.rect(x, y - txtH, txtW, txtH);
+			};
+			
 
 			//==============================================================================
 			// Trim the last character from textA[0] and return the width of the removed char
@@ -164,14 +181,6 @@
 				return slCtx1.textWidth(text);
 			};
 
-			// return dayMonth string: '1 Jan' of date
-			var dayMonth = function(date) {
-				var retVal = '';
-				if (date[0] > 0 && date[1] > 0) {
-					retVal += date[0] + ' ' + slTxt.abbrMonth(date[1] - 1);
-				}
-				return retVal;
-			};
 
 			var year = function(date) {
 				if (date && date.length > 2) {
@@ -365,54 +374,7 @@
 				return true;
 			};
 
-			// return [state, country, newPlaceLength] || undefined
-			var extractStateCountry = function(place) {
-				var plLen = place.length;
-				var state;
-				var country;
-				if (plLen > 0 && !isNaN(place[plLen-1])) {
-					var cId = place[plLen-1];
-					country = slCtry.countryAbrv(cId);
-					if (plLen > 1 && !isNaN(place[plLen-2])) {
-						var sId = place[plLen-2];
-						state = slCtry.stateAbrv(cId, sId);
-					} 
-					return [state, country,plLen - 2];
-				}
-				return undefined;
-			};
-
-			var addPlace = function (place, txtA) {
-				if (!place) {
-					return false;
-				}
-				var added = false;
-				var sc = extractStateCountry(place);
-				var stateCtry;
-				var plLen = place.length;
-				if (sc) {
-					stateCtry = sc[0] ? sc[0] + ' ' + sc[1] : sc[1];
-					plLen = sc[2];
-				}
-				for (var i = 0; i < plLen; i++) {
-					if (slTxt.isValid(place[i])) {
-						if (added) {
-							txtA[0] += ', ';
-						}
-						txtA[0] += place[i];
-						added = true;
-					} else {
-						break;
-					}
-				}
-				if (stateCtry) {
-					if (added) {
-						txtA[0] += ', ';
-					}
-					txtA[0] += stateCtry;
-				}
-				return txtA[0].length > 0;
-			};
+	
 
 			// 1. Remove vowels from inside words
 			// 2. Shorten words to first 3 characters
@@ -480,7 +442,7 @@
 				// Work from the back to reduce
 				var totalReduced = 0;
 				var results;
-				var sc = extractStateCountry(place);
+				var sc = slCtry.extractStateCountry(place);
 				var plLen = place.length;
 				if (sc) {
 					place[plLen - 1] = sc[1];
@@ -608,7 +570,7 @@
 			var reduceMarriage = function (prefix, event, width) {
 				var mText = [''];
 				addDate(prefix, event.date, mText);
-				if (!addPlace(event.place, mText)) {
+				if (!slTxt.addPlace(event.place, mText)) {
 					mText[0] = mText[0].substring(0, mText[0].length - 1);
 				}
 				var mW = slCtx1.textWidth(mText[0]);
@@ -635,7 +597,7 @@
 				var bText = [''];
 				if (birth) {
 					addDate(bPrefix, birth.date, bText);
-					if (!addPlace(birth.place, bText)) {
+					if (!slTxt.addPlace(birth.place, bText)) {
 						bText[0] = bText[0].substring(0, bText[0].length - 1);
 					}
 				}
@@ -643,7 +605,7 @@
 				var dText = [''];
 				if (death) {
 					addDate(dPrefix, death.date, dText);
-					if (!addPlace(death.place, dText)) {
+					if (!slTxt.addPlace(death.place, dText)) {
 						dText[0] = dText[0].substring(0, dText[0].length - 1);
 					}
 				}
@@ -695,7 +657,7 @@
 				var textA = [''];
 				var locX = slCtx1.concat(textA, prefix);
 				var startSel = slSel.nextSR();
-				var dyMnth = dayMonth(date);
+				var dyMnth = slTxt.dayMonth(date);
 				var mW = slCtx1.concat(textA, dyMnth);
 				if (mW > 0) {
 					if (select) {
@@ -736,7 +698,7 @@
 				}
 				var locX = 0;
 				var textA = [''];
-				var sc = extractStateCountry(place);
+				var sc = slCtry.extractStateCountry(place);
 				var plLen = place.length;
 				if (sc) {
 					if (sc[0]) {
@@ -820,43 +782,24 @@
 
 
 			//==================================================
-			// return amount to shrink text lines base on current
+			// return amount to shrink text lines based on current
 			// font settings
 			slCtx1.shrinkW = function () {
 				return slCtx1.textWidth('XX');
 			};
 
-			var personColors = function (gender) {
-				var maleCardColor = '#AACBDA';
-				var femaleCardColor = '#EFBFBF';
-				var UnknownColor = '#C5C5C5';
-				if (gender === 'U') {
-					return ['#C2C2C2', '#656565', UnknownColor];
-				} else if (gender === 'M') {
-					return ['#8BA4C3', '#546376', maleCardColor];
-				} else if (gender === 'F') {
-					return ['#C38BB7', '#74536D', femaleCardColor];
-				}
-			};
-
-			var setUnattachedSourcesColors = function () {
-				slCtx1.setDrawStyle('#C3AD82', '#7F7155');
-			};
-
-			var setAttachedSourcesColors = function () {
-				slCtx1.setDrawStyle('#60CDA2', '#2B7420');
-			};
-
-			var setAttachedBoxColors = function () {
-				slCtx1.setDrawStyle('#60CDA2', '#2B7420');
-			};
-
-
 /*  Needed?
+			var setAttachedBoxColors = function () {
+				var color = slCSS.attachedBoxColors;
+				slCtx1.setDrawStyle(color.fill, color.stroke);
+			};
+
+
+
 			slCtx1.clearAttachedSourceRegion = function (align,attDim) {
 				var sideDim = attDim.side;
 				var topDim = attDim.top;
-				var leftSideBox = new slCtx1.slGeom.rectangle(align.attBox.left(), align.attBox.right, canvasWidth, canvasHeight);
+				var leftSideBox = new slCtx1.slGeom.rectangle(align.attBox.m.left(), align.attBox.right, canvasWidth, canvasHeight);
 				setAttachedSourcesColors();
 				slCtx1.drawBox(innerBox);
 
@@ -867,18 +810,25 @@
 			};
 */
 			slCtx1.renderAttSrcBox = function (area) {
-				setAttachedBoxColors();
-				slCtx1.drawBox(area);
+				drawBackgroundBox(slCSS.attachedSrcsColors,area);
+			};
+
+			// Creates a more rounded box edge using two colors
+			var drawBackgroundBox = function (colors, box) {
+				var edgeWidth = 2;
+				slCtx1.setDrawStyle(colors.fill, colors.edge1);
+				slCtx1.drawRect(box);
+				var innerBox = box.m.shrink(edgeWidth);
+				slCtx1.setDrawStyle(colors.fill, colors.edge2);
+				slCtx1.drawBox(innerBox);
 			};
 
 
 			slCtx1.drawBackground = function (personId) {
 				canvasResize();
 				actvPersonId = personId;
-				ctx1.lineWidth = 1;
-				var edgeWidth = 5;
+				slCtx1.lineWidth(3);
 				var person;
-				var colors;
 				var dimensionY = (canvasHeight) / 4;
 				var dimensionX = (canvasWidth) / 7;
 				var outerBox = new slGeom.rectangle(0, 0, canvasWidth, canvasHeight);
@@ -886,31 +836,24 @@
 										outerBox.d.x - 2 * dimensionX, outerBox.d.y - dimensionY);
 				var personBox = new slGeom.rectangle(innerBox.loc.x + dimensionX, innerBox.loc.y + dimensionY,
 										innerBox.d.x - 2 * dimensionX, innerBox.d.y - dimensionY);
-				setUnattachedSourcesColors();
-				slCtx1.drawBox(outerBox);
-				setAttachedSourcesColors();
-				slCtx1.drawBox(innerBox);
+				drawBackgroundBox(slCSS.unattachedSrcsColors, outerBox);
+				drawBackgroundBox(slCSS.attachedSrcsColors, innerBox);
 				person = slPpl.getPerson(personId);
 				if (!person) {
 					alert('No person found for: ' + personId);
 				}
-				var gender = (!person || !person.gender) ? 'U' : person.gender;
-				colors = personColors(gender);
-				slCtx1.setDrawStyle(colors[0], colors[1]);
-				slCtx1.drawBox(personBox);
-				personBox = personBox.shrink(edgeWidth);
-				slCtx1.setDrawStyle(colors[2], colors[2]);
-				slCtx1.drawBox(personBox);
+				var gender = (!person || !person.gender) ? 'U' : person.gender.toUpperCase();
+				drawBackgroundBox(slCSS.personColors[gender], personBox);
 				return {
 					unAttBox: outerBox,
 					attBox: innerBox,
 					persBox: personBox,
-					indent: 20
+					indent: slCSS.boxIndent
 				};
 			};
 
 			slCtx1.setFontSize = function (fontSize) {
-				ctx1.font = fontSize + 'px Tahoma';
+				ctx1.font = fontSize + 'px ' + slCSS.font;
 				return fontSize * 1.2;
 			};
 
@@ -926,50 +869,70 @@
 				if (preID === 'R') {
 					familyName = famName;
 				}
+				var spW = slCtx1.textWidth(' ');
 				var givName = person.name[0];
 				var fullName = givName + ' ' + famName;
-				var givWidth = slCtx1.textWidth(givName);
-				var famWidth = slCtx1.textWidth(famName);
-				var fullW = slCtx1.textWidth(fullName);
+				var genderW = slCSS.genderWidth;
+				var startW = genderW + spW;
+				var givenW = slCtx1.textWidth(givName);
+				var famlyW = slCtx1.textWidth(famName);
+				var fullW = genderW + spW + slCtx1.textWidth(fullName);
 				var nextSR;
+				var startX;
+				var nameX;
 				if (select) {
 					nextSR = slSel.nextSR();
 				}
 				if (width >= fullW) {
-					slCtx1.drawText(fullName, x, y);
+					// Name fits on first line
+					startX = x - fullW / 2;
+					slCtx1.drawIcon(person.gender, startX, y, genderW, genderW);
+					nameX = startX + startW;
+					slCtx1.drawText(fullName, nameX, y);
 					if (select) {
-						slSel.pushSR([preID + 'nG', slGeom.rect(x - fullW / 2, y - height, givWidth, height)]);
-						slSel.pushSR([preID + 'nF', slGeom.rect(x + fullW / 2 - famWidth, y - height, famWidth, height)]);
+						slSel.pushSR([preID + 'g', slGeom.rect(startX, y - height, genderW, height)]);
+						slSel.pushSR([preID + 'nG', slGeom.rect(nameX, y - height, givenW, height)]);
+						slSel.pushSR([preID + 'nF', slGeom.rect(nameX + givenW + spW, y - height, famlyW, height)]);
 					}
 					return y + lineSpace;
 				} else {
 					// Name is too long.	Split on two lines
 					var nextY = y + lineSpace; // positive y is down
-					if (width >= givWidth) {
-						slCtx1.drawText(givName, x, y);
+					if (width >= givenW + startW) {
+						startX = x - (givenW + startW) / 2;
+						slCtx1.drawIcon(person.gender, startX, y, genderW, genderW);
+						nameX = startX + startW;
+						slCtx1.drawText(givName, nameX, y);
+						ctx1.textAlign = 'center';
 						slCtx1.drawText(famName, x, nextY);
 						if (select) {
-							slSel.pushSR([preID + 'RnG', slGeom.rect(x - givWidth / 2, y, givWidth, height)]);
-							slSel.pushSR([preID + 'nF', slGeom.rect(x - famWidth / 2, y - lineSpace, famWidth, height)]);
+							slSel.pushSR([preID + 'g', slGeom.rect(startX, y - height, genderW, height)]);
+							slSel.pushSR([preID + 'RnG', slGeom.rect(nameX, y, givenW, height)]);
+							slSel.pushSR([preID + 'nF', slGeom.rect(x - famlyW / 2, y - lineSpace, famlyW, height)]);
 						}
 						return y + lineSpace * 2;
 					} else {
 						// Name is too long to fit on two lines
-						var neededSpace = givWidth - width;
+						var neededSpace = startW + givenW - width;
 						var gname = [givName];
 						reduceGivName(gname, neededSpace);
 						givName = gname[0];
-						slCtx1.drawText(givName, x, y);
-						givWidth = slCtx1.textWidth(givName);
-						if (famWidth > width) {
-							neededSpace = famWidth - width;
+						givenW = slCtx1.textWidth(givName);
+						startX = x - (givenW + startW) / 2;
+						slCtx1.drawIcon(person.gender, startX, y, genderW, genderW);
+						nameX = startX + startW;
+						slCtx1.drawText(givName, nameX, y);
+						if (famlyW > width) {
+							neededSpace = famlyW - width;
 							famName = reduceFamName(famName, neededSpace);
-							famWidth = slCtx1.textWidth(famName);
+							famlyW = slCtx1.textWidth(famName);
 						}
-						slCtx1.drawText(' ' + famName, x, y);
+						ctx1.textAlign = 'center';
+						slCtx1.drawText(famName, x, nextY);
 						if (select) {
-							slSel.pushSR([preID + 'nG', slGeom.rect(x - width / 2, y, givWidth, height)]);
-							slSel.pushSR([preID + 'nF', slGeom.rect(x - width / 2, nextY, famWidth, height)]);
+							slSel.pushSR([preID + 'g', slGeom.rect(startX, y - height, genderW, height)]);
+							slSel.pushSR([preID + 'nG', slGeom.rect(nameX, y, givenW, height)]);
+							slSel.pushSR([preID + 'nF', slGeom.rect(x - famlyW / 2, nextY, famlyW, height)]);
 						}
 						return y + lineSpace * 2;
 					}
@@ -985,8 +948,8 @@
 				}
 				ctx1.textAlign = 'left';
 				var maxYearW = slCtx1.textWidth('4444');
-				var spWidth = slCtx1.textWidth(' ');
-				var maxNameW = width - maxYearW - spWidth;
+				var spW = slCtx1.textWidth(' ');
+				var maxNameW = width - maxYearW - spW;
 				var startName = x - width / 2;	// left edge of name
 				var startYear = x + width / 2 - maxYearW;
 				var famName = person.name[1];
@@ -1037,7 +1000,7 @@
 			};
 
 			//=============================================================================================
-			// renderNameYearPl  draw then persons name and birth year and birth place so each field lines up
+			// renderNameYearPl  draw the persons name and birth year and birth place so each field lines up
 			//			start at left edge determined by half width left of x
 			//			reduce so it will fit on one line.
 			slCtx1.renderNameYearPl = function (person, preID, x, y, width, height, lineSpace, select) {
@@ -1047,11 +1010,11 @@
 				ctx1.textAlign = 'left';
 				var maxNameW = width / 3;
 				var maxYearW = slCtx1.textWidth('4444');
-				var spWidth = slCtx1.textWidth(' ');
-				var maxPlaceW = width - maxNameW - maxYearW - 2 * spWidth;
+				var spW = slCtx1.textWidth(' ');
+				var maxPlaceW = width - maxNameW - maxYearW - 2 * spW;
 				var startName = x - width / 2;	// left edge of name
-				var startYear = startName + maxNameW + spWidth;
-				var startPlace = startYear + maxYearW + spWidth;
+				var startYear = startName + maxNameW + spW;
+				var startPlace = startYear + maxYearW + spW;
 				var famName = person.name[1];
 				var givName = person.name[0];
 				var name;
@@ -1063,6 +1026,8 @@
 				}
 				if (person.id === actvPersonId) {
 					slCtx1.boldFont();
+				} else {
+					slCtx1.normalFont();
 				}
 				var nameW = slCtx1.textWidth(name);
 				var givW;
@@ -1087,9 +1052,7 @@
 						slSel.pushSR([preID + 'nF', slGeom.rect(startName + nameW - famW, y - height, famW, height)]);
 					}
 				}
-				if (person.id === actvPersonId) {
-					slCtx1.normalFont();
-				}
+				slCtx1.normalFont();
 				if (slPpl.noEvent(person.birth)) {
 					slCtx1.drawText(personLivingStatus(person), startYear, y);
 					return y + lineSpace;
@@ -1105,7 +1068,7 @@
 					slCtx1.drawText(personLivingStatus(person), startYear, y);
 				}
 				var plcText = [''];
-				addPlace(bEv.place, plcText);
+				slTxt.addPlace(bEv.place, plcText);
 				var plcW = slCtx1.textWidth(plcText);
 				if (plcW > 0) {
 					var place = bEv.place.slice(0);
@@ -1113,7 +1076,7 @@
 						reducePlace(place, plcW - maxPlaceW);
 					}
 					plcText = [''];
-					addPlace(place, plcText);
+					slTxt.addPlace(place, plcText);
 					slCtx1.drawText(plcText[0], startPlace, y);
 					if (select) {
 						var locX = startPlace;
@@ -1399,11 +1362,11 @@
 				return y + offsetY;
 			};
 
-			slCtx1.renderChildren = function (children, seqGrp, x, y, secW, textY, fontSize, select) {
+			slCtx1.renderChildren = function (children, seqGrp, x, y, secW, textY, select) {
 				if (!children) {
 					return;
 				}
-				var textHeight = slCtx1.setFontSize(fontSize);
+				var textHeight = slCtx1.setFontSize(slCSS.famFontSize);
 				var lineSpace = textHeight * 0.6;
 				var i;
 				for (i = 0; i < children.length; i++) {
@@ -1441,9 +1404,15 @@
 			//				The max line width is maxW and character height is height.
 			//				If phrase is too long to fit on one line then draw on two lines.
 			//				If phrase will not fit on two lines then reduce to fit on two lines.
-			slCtx1.renderPhrase = function (phrase, x, y, maxW, height, lineSpace) {
+			slCtx1.renderPhrase = function (phrase, x, y, maxW, height, lineSpace, color) {
 				var fullW = slCtx1.textWidth(phrase);
+				var rect;
 				if (maxW >= fullW) {
+					if (color) {
+						rect = slCtx1.textRect(x - fullW/2, y, fullW, height);
+						slCtx1.setDrawStyle(color.fill, color.stroke);
+						slCtx1.drawBox(rect);
+					}
 					slCtx1.drawText(phrase, x, y);
 					return y + lineSpace;
 				} 
@@ -1475,6 +1444,12 @@
 					var lwidth = slCtx1.textWidth(twoLines[i]);
 					if (lwidth > maxW) {
 						twoLines[i] = reducePhrase(twoLines[i],lwidth - maxW);
+					}
+					if (color) {
+						var txtW = slCtx1.textWidth(twoLines[i]);
+						rect = slCtx1.textRect(x - txtW/2, y, txtW, height);
+						slCtx1.setDrawStyle(color.fill, color.stroke);
+						slCtx1.drawBox(rect);
 					}
 					slCtx1.drawText(twoLines[i], x, y);
 				}
@@ -1527,7 +1502,7 @@
 				return best;
 			};
 
-			slCtx1.renderSourceEvents = function (sources, x, y, maxW, height, lineSpace, maxY) {
+			slCtx1.renderSourceEvents = function (sources, x, y, maxW, height, lineSpace/*, maxY*/) {
 				var first = sources[0];
 				var txt = [''];
 				if (first.type) {
@@ -1537,7 +1512,7 @@
 				var place = bestEventPlace(sources);
 				addDate('', date, txt);
 				txt[0] += ' ';
-				addPlace(place, txt);
+				slTxt.addPlace(place, txt);
 				return slCtx1.renderPhrase(txt[0], x, y, maxW, height, lineSpace);
 			};
 

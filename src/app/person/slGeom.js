@@ -29,42 +29,62 @@
 			this.loc = new slGeom.xy(x, y);
 			this.d = new slGeom.xy(width, height);
 			
-			this.shrink = function (dim) {
-				var double = 2 * dim;
-				return new slGeom.rectangle(this.loc.x + dim,
-					this.loc.y + dim,
-					this.d.x - double,
-					this.d.y - double);
-			};
+			// methods seperated for better viewing
+			this.m = {
+				// returns a new rectangle that has shrunk horizontally
+				// and vertically by dimension - dim.
+				shrink: function (dim) {
+					var double = 2 * dim;
+					return new slGeom.rectangle(this.loc.x + dim,
+						this.loc.y + dim,
+						this.d.x - double,
+						this.d.y - double);
+				}.bind(this),
 
-			this.centerX = function () {
-				return this.loc.x + this.d.x / 2;
-			};
+				centerX: function () {
+					return this.loc.x + this.d.x / 2;
+				}.bind(this),
 
-			this.centerY = function () {
-				return this.loc.y + this.d.y / 2;
-			};
+				centerY: function () {
+					return this.loc.y + this.d.y / 2;
+				}.bind(this),
 
-			this.left = function () {
-				return this.loc.x;
-			};
+				left: function () {
+					return this.loc.x;
+				}.bind(this),
 
-			this.right = function () {
-				return this.loc.x + this.d.x;
-			};
+				right: function () {
+					return this.loc.x + this.d.x;
+				}.bind(this),
 
-			this.top = function () {
-				return this.loc.y;
-			};
+				top: function () {
+					return this.loc.y;
+				}.bind(this),
 
-			this.bottom = function () {
-				return this.loc.y + this.d.y;
-			};
+				bottom: function () {
+					return this.loc.y + this.d.y;
+				}.bind(this),
 
-			this.clone = function () {
-				return new slGeom.rectangle(this.loc.x, this.loc.y, this.d.x, this.d.y);
-			};
+				clone: function () {
+					return new slGeom.rectangle(this.loc.x, this.loc.y, this.d.x, this.d.y);
+				}.bind(this),
 
+				setLeft: function (v) {
+					this.loc.x = v;
+				}.bind(this),
+
+				setRight: function (v) {
+					this.d.x = v - this.loc.x;
+				}.bind(this),
+
+				setTop: function (v) {
+					this.loc.y = v;
+				}.bind(this),
+
+				setBottom: function (v) {
+					this.d.y = v - this.loc.y;
+				}.bind(this)
+			};
 		};
 
 		return slGeom;

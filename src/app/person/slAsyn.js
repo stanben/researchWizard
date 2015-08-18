@@ -28,7 +28,7 @@ slApp.factory('prompt',
 					inputValue: defaultValue,
 					type: 'input',
 					showCancelButton: true,
-					confirmButtonColor: '#ec6c62'
+					confirmButtonColor: slCSS.confirmButtonColor
 
 				}, function (inputValue) {
 					if (inputValue === false || inputValue === '') {

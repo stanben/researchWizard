@@ -25,7 +25,10 @@
 	});
 
 
-	slApp.controller('PersonController', function ($scope, $state, $rootScope, person, personId, fsApi, fsUtils, fsCurrentUserCache, slCtx1, slCtx2, slDrw, slPpl, slInpt, slActv, slAnlzSel) {
+	slApp.controller('PersonController',
+		function ($scope, $state, $rootScope, person, personId, fsApi,
+			fsUtils, fsCurrentUserCache, slCtx1, slCtx2, slDrw, slPpl,
+			slInpt, slActv, slAnlz) {
 
 		/*
 		var sections = [
@@ -55,7 +58,7 @@
 		$scope.person = person;
 		$scope.slInpt = slInpt;
 		slActv.setPerson(person,personId);
-		slAnlzSel.deselect();
+		slAnlz.deselect();
 		/*
 		sources.forEach(function (source) {
 			fsUtils.mixinStateFunctions($scope, source);

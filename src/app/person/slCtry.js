@@ -384,6 +384,25 @@
 			return abbrv;
 		};
 
+		// return [state, country, newPlaceLength] || undefined
+		slCtry.extractStateCountry = function (place) {
+			if (place) {
+				var plLen = place.length;
+				var state;
+				var country;
+				if (plLen > 0 && !isNaN(place[plLen - 1])) {
+					var cId = place[plLen - 1];
+					country = slCtry.countryAbrv(cId);
+					if (plLen > 1 && !isNaN(place[plLen - 2])) {
+						var sId = place[plLen - 2];
+						state = slCtry.stateAbrv(cId, sId);
+					}
+					return [state, country, plLen - 2];
+				}
+			}
+			return undefined;
+		};
+
 		return slCtry;
 	});
 })();

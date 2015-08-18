@@ -3,8 +3,8 @@
 	var slApp = angular.module('sourceLink');
 
 	// factory for managing all visited people
-	slApp.factory('slPpl', ['$window', 'fsApi', 'slCtry', 'slTxt', 'slSel', 'slFix', 'slSrc', 'slSrcX', 'alert',
-		function (window, fsApi, slCtry, slTxt, slSel, slFix, slSrc, slSrcX, alert) {
+	slApp.factory('slPpl', ['$window', 'fsApi', 'slCtry', 'slTxt', 'slSel', 'slFix', 'slSrc', 'alert',
+		function (window, fsApi, slCtry, slTxt, slSel, slFix, slSrc, alert) {
 		
 		//================================================================
 		// Persons data structure
@@ -26,16 +26,18 @@
 		//			spouse: personId		marriage: event
 		//			children: [personId, ...]
 		//			}
-		var persons = new Map();	// map to person by person.id
-		
 		var slPpl = {};
+		var persons = new Map();	// map to person by person.id
+		var drawSourcesCB;
+		var activePersonId;
+		
 
 		var reportCountryNotFound = function(person,country,eventType) {
 			var evName = slSel.eventName(eventType);
 			var message = person.name[0] + ' ' + person.name[1] +
 				' is missing Country in ' + evName + ' place: ' +
 				country + ' is not a country.';
-			var newFix = slFix.add(message);
+			/*var newFix = */slFix.add(message);
 //			if (newFix) {
 //				alert(message);
 //			}
@@ -365,99 +367,37 @@
 			return newTab;
 		};
 
-		var sourcesPerPerson = new Map();		// key is personId value = [sources count]
-		var sourcesPerPersonDone = false; 
-		
 
-		var notifySourceReqDone = function () {
-			// All sources are done if all numSources in sourcesPerPerson
-			// are >= 0;
-			var allDone = true;
-			var sppIter = sourcesPerPerson.values();
-			for (; ;) {
-				var sppVal = sppIter.next();
-				if (sppVal.done) {
-					break;
-				}
-				if (sppVal.value[0] < 0) {
-					allDone = false;
-					return;
-				}
+		var installSources = function (personId, sources) {
+			var person = slPpl.getPerson(personId);
+			if (person.sources) {
+				alert('installSources to: ' + personId +
+					' when sources already exist.');
 			}
-			slSrc.done(sourcesPerPerson);
-			sourcesPerPerson.clear();
-		};
-
-		slPpl.personComplete = function() {
-			sourcesPerPersonDone = true;
-		};
-		var personSources = [];
-
-		slPpl.installPersonSources = function () {
-			var len = personSources.length;
-			for (var i = 0; i < len; i++) {
-				var ps = personSources[i];
-				var person = slPpl.getPerson(ps[0]);
-				if (person) {
-					slSrc.addPersonSource(person, [ps[1], ps[2]]);
-				} else {
-					alert('addSourceId to nonExistant person: ' + ps[0]);
-				}
+			person.sources = sources;
+			if (personId === activePersonId) {
+				drawSourcesCB();
 			}
-			personSources.length = 0;
 		};
 
-		var pushSourceId = function (personId, sourceId, sourcePersonId) {
-			personSources.push([personId, sourceId, sourcePersonId]);
-			
-		};
-
-		var numGetSrcs = 0;
-		var numSrcsReturned = 0;
 
 		slPpl.getSources = function (persId, drawSources, drawAttPhrase) {
 			if (drawSources) {
 				// Starting new set of sources reset sourcesPerPerson
-				sourcesPerPerson.clear();
-				sourcesPerPersonDone = false;
-				numGetSrcs = numSrcsReturned = 0;
-				slSrc.init(drawSources,drawAttPhrase);
-				slSrcX.init();
+				drawSourcesCB = drawSources;
+				activePersonId = persId;
+				slSrc.init(installSources,drawAttPhrase);
 			}
 			var person = slPpl.getPerson(persId);
 			if (person && person.sources) {
-				return;
-			}
-			if (sourcesPerPerson.get(persId)) {
-				return;
-			}
-			sourcesPerPerson.set(persId, [-1]);
-			++numGetSrcs;
-			fsApi.getPersonSourcesQuery(persId).then(function (response) {
-				++numSrcsReturned;
-				var numSources = 0;
-				var sourceRefs = response.getSourceRefs();
-				var i,len;
-				len = sourceRefs.length;
-				for (i = 0; i < len; i++) {
-					var sourceRef = sourceRefs[i];
-					var description = response.getSourceDescription(sourceRef.$sourceDescriptionId);
-					var srcInfo = slSrc.info(persId, sourceRef, description, pushSourceId);
-					if (description.about) {
-						var idx = description.about.indexOf('familysearch.org');
-						if (idx >= 0 && idx <= 20) {
-							slSrc.load(srcInfo, person.sources ? person.sources.length : undefined);
-							++numSources;
-							continue;
-						}
-					}
-					slSrcX.extract(srcInfo, person);
-				}	
-				var sppVal = sourcesPerPerson.get(persId);
-				sppVal[0] = numSources;
-				if (sourcesPerPersonDone && numGetSrcs === numSrcsReturned) {
-					notifySourceReqDone();
+				if (persId === activePersonId) {
+					drawSourcesCB();
 				}
+				return;
+			}
+			fsApi.getPersonSourcesQuery(persId).then(function (response) {
+				slSrc.personSources(person, response);
+
 			});
 		};
 

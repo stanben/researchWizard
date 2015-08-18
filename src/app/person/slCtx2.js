@@ -1,8 +1,8 @@
 (function () {
 	'use strict';
 	var slApp = angular.module('sourceLink');
-	slApp.factory('slCtx2', ['alert',
-		function (alert) {
+	slApp.factory('slCtx2', ['slCSS', 'alert',
+		function (slCSS,alert) {
 			var canvas2;	// Overlay Canvas where selection and interaction takes place
 			var ctx2;		// 2d context of canvas2
 			var canvasWidth;
@@ -28,6 +28,10 @@
 			//========================================================
 			//  Draw objects
 			//========================================================
+			slCtx2.lineWidth = function (width) {
+				ctx2.lineWidth = width;
+			};
+
 			slCtx2.setDrawStyle = function (fillColor, strokeColor) {
 				ctx2.fillStyle = fillColor;
 				ctx2.strokeStyle = strokeColor;
@@ -73,16 +77,17 @@
 			};
 
 			slCtx2.highliteSelection = function (rect) {
-				var solidRed = '#FF0000';
-				var transpRed = 'rgba(255, 0, 0, 0.3)';
-				slCtx2.setDrawStyle(transpRed, solidRed);
+				slCtx2.lineWidth(3);
+				var color = slCSS.highliteLocation;
+				slCtx2.setDrawStyle(color.fill, color.stroke);
 				slCtx2.fillRect(rect);
 				slCtx2.drawRect(rect);
 			};
 
 			slCtx2.highlite = function (rect) {
-				var solidRed = '#FF0000';
-				slCtx2.setDrawStyle(solidRed, solidRed);
+				slCtx2.lineWidth(1);
+				var color = slCSS.highliteSelection;
+				slCtx2.setDrawStyle(color.fill, color.stroke);
 				slCtx2.drawRect(rect);
 			};
 

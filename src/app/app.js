@@ -18,7 +18,6 @@
 
 	slApp.config(function (fsApiProvider) {	// configure fsApi Provider
 		fsApiProvider
-		//.setClientId('WCQY-7J1Q-GKVV-7DNM-SQ5M-9Q5H-JX3H-CMJK')
 		.setClientId('a02j0000006na3iAAA')
 		//.setEnvironmentName('sandbox')
 		//.setEnvironmentName('beta')
@@ -88,10 +87,11 @@
 	});
 
 	// $scope is the application object
-	slApp.controller('AppController', function ($scope, fsApi, slInpt) {
+	slApp.controller('AppController', function ($scope, fsApi, slInpt, slCSS) {
 		//$scope.environment = 'Sandbox';
 		//$scope.environment = 'Beta';
 		//$scope.environment = 'Staging';
+		slCSS.init();
 		$scope.environment = 'Production';
 
 		$scope.changeID = //$timeout(function () {

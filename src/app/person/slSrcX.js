@@ -189,7 +189,10 @@
 								source.type = pinf[2].toUpperCase();
 							}
 						}
-						source.people.push(srcPerson);
+						if (!source.people) {
+							source.people = new Map();
+						}
+						source.people.set(srcInfo.persId,psrcPerson);
 					}
 				}
 			};
@@ -209,7 +212,7 @@
 */
 
 			// Extract source information from srcInfo
-			slSrcX.extract = function (/*srcInfo, person*/) {
+			slSrcX.extract = function (/*person, srcInfo*/) {
 				/*
 					extractSource(srcInfo);
 					extractPersonInfo(srcInfo, person);
@@ -218,7 +221,6 @@
 					var sourcePersonId = srcInfo.persId;
 					if (source) {
 						add(srcInfo.source);
-						srcInfo.pushSourceId(srcInfo.persId, source.id, sourcePersonId);
 					}
 			*/
 			};

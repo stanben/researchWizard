@@ -24,67 +24,425 @@
 
 		//  relation Sequence number defines which of the relations in an array of that relationship type
 		//  the first will be 0
-//		var relSqN = 0;
+		//		var relSqN = 0;
 
 		//=====================================================================
 		// NOTE: All abreviations need to be different between infoType and eventType
 
 		// Information Type of a person
-/*
-		var infoType = [
-		//	[infoTypeName,  infoTypeAbbreviation, [valid subInfoTypeAbbreviations]]
-		['Name', 'n', ['G','F']]
-		];
+		/*
+				var infoType = [
+				//	[infoTypeName,  infoTypeAbbreviation, [valid subInfoTypeAbbreviations]]
+				['Name', 'n', ['G','F']]
+				];
+		
+		
+				// Possible sub-event types
+				var subInfoType = [
+				//	[subInfoTypeName,  subInfoTypeAbbreviation, dataType]
+				];
+		*/
+		var eventTypes = {
+			//	[eventTitle, [lowercaseSearchValue(s)] ,eventTypeAbbreviationProperty]
+			// object properties are camelCase of EventTitle
+		ap: ['Adoption',  ['adopt'], 'ap'],				// An adoption event.
+		ac: ['AdultChristening', ['adult','christen'], 'ac'],		// An adult christening event.
+		an: ['Annulment', ['annul'], 'an'],			// An annulment event of a marriage.
+		bp: ['Baptism', ['bapt'], 'bp'],				// A baptism event.
+		brm: ['BarMitzvah', ['barmit'], 'brm'],			// A bar mitzvah event.
+		btm: ['BatMitzvah', ['batmit'], 'btm'],			// A bat mitzvah event.
+		b: ['Birth', ['birth'], 'b'],					// A birth event.
+		bl: ['Blessing', ['bless'], 'bl'],				// A an official blessing event, such as at the hands of a clergy member or at another religious rite.
+		br: ['Burial', ['bur'], 'br'],				// A burial event.
+		c: ['Census', ['cens'], 'c'],				// A census event.
+		ch: ['Christening', ['christen'], 'ch'],			// A christening event at birth. Note: use AdultChristening for a christening event as an adult.
+		cc: ['Circumcision', ['circumcis'], 'cc'],			// A circumcision event.
+		cf: ['Confirmation', ['confirm'], 'cf'],			// A confirmation event (or other rite of initiation) in a church or religion.
+		cr: ['Cremation', ['cremat'], 'cr'],			// A cremation event after death.
+		d: ['Death', ['death'], 'd'],					// A death event.
+		dv: ['Divorce', ['divorce'], 'dv'],				// A divorce event.
+		df: ['DivorceFiling', ['divorce','fil'], 'df'],		// A divorce filing event.
+		ed: ['Education', ['educat'], 'ed'],			// A education or an educational achievement event (e.g. diploma, graduation, scholarship, etc.).
+		en: ['Engagement', ['engage'], 'en'],			// An engagement to be married event.
+		em: ['Emigration', ['emigrat'], 'em'],			// An emigration event. (visit a country)
+		ex: ['Excommunication', ['excommun'], 'ex'],		// An excommunication event from a church.
+		fc: ['FirstCommunion', ['communion'], 'fc'],		// A first communion event.
+		f: ['Funeral', ['funeral'], 'f'],				// A funeral event.
+		g: ['Gender', ['gender'], 'g'],
+		i: ['Immigration', ['immigrat'], 'i'],			// An immigration event.	(move to a country)
+		l: ['LandTransaction', ['land','transact'], 'l'],		// A land transaction event.
+		m: ['Marriage', ['marri'], 'm'],				// A marriage event.
+		ma: ['MilitaryAward', ['military','award'], 'ma'],		// A military award event.
+		md: ['MilitaryDischarge', ['military','discharge'], 'md'],	// A military discharge event.
+		ms: ['Mission', ['mission'], 'ms'],				// A mission event.
+		mf: ['MoveFrom', ['move','from'], 'mf'],				// An event of a move (i.e. change of residence) from a location.
+		mt: ['MoveTo', ['move','to'], 'mt'],				// An event of a move (i.e. change of residence) to a location.
+		nt: ['Naturalization', ['naturaliz'], 'nt'],		// A naturalization event (i.e. acquisition of citizenship and nationality).
+		ord: ['Ordination', ['ordinat'], 'ord'],			// An ordination event.
+		ret: ['Retirement', ['retire'], 'ret'],			// A retirement event.
+		x:	['BirthAndDeath', ['birth'], 'x']
+		};
+
+		var infoTypes = {
+			n: 'name',
+			g: 'gender'
+		};
+		
+		// return property 
+		var getPersonProperty = function(id) {
+			var evType = eventTypes[id];
+			if (evType) {
+				return slTxt.uncapitalize(evType[0]);
+			}
+			var infTyp = infoTypes[id];
+			return infTyp;
+		};
+
+		
+
+		slSel.eventName = function (eventType) {
+			var evType = eventTypes[eventType];
+			if (evType) {
+				return evType[0];
+			}
+			return 'unknown';
+		};
+
+		slSel.extractType = function (txt) {
+			var lct = txt.toLowerCase();
+			for (var prop in eventTypes) {
+				if (eventTypes.hasOwnProperty(prop)) {
+					var len = prop[1].length;
+					for (var i = 0; i < len; i++) {
+						if (lct.indexOf(prop[i][1]) >= 0) {
+							return prop[0];
+						}
+					}
+				}
+			}
+			return undefined;
+		};
+
+		var compareMonthDay = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pdate = personProp.date;
+			var sdate = srcProp.date;
+			if (!pdate || !sdate) {
+				return undefined;
+			}
+			if (sdate[0] === 0 && sdate[1] === 0) {
+				// source has no month day info.
+				return undefined;
+			}
+			var srcTxt = slTxt.dayMonth(sdate);
+			var rslt = 0;
+			if (pdate[0] === sdate[0]) {
+				++rslt;
+			}
+			if (pdate[1] === sdate[1]) {
+				++rslt;
+			}
+			if (rslt === 2) {
+				return ['exact', srcTxt];
+			}
+			if (rslt === 1) {
+				return ['near', srcTxt];
+			}
+			return ['no', srcTxt];
+		};
+
+		var compareYear = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pdate = personProp.date;
+			var sdate = srcProp.date;
+			if (!pdate || !sdate || pdate.length < 3 || sdate.length < 3) {
+				return undefined;
+			}
+			var srcTxt = sdate[2].toString();
+			var find = pdate[2];
+			var rslt = sdate[2] - find;
+			if (rslt === 0) {
+				return ['exact', srcTxt];
+			}
+			if (Math.abs(rslt) <= 2) {
+				return ['near', srcTxt];
+			}
+			return ['no', srcTxt];
+		};
+
+		var plMatch = function (pl1, pl2) {
+			if (pl1 && pl2) {
+				return pl1.toLowerCase() === pl2.toLowerCase();
+			}
+			return false;
+		};
+
+		var plMatchLoc = function (plArr, find) {
+			find = find.toLowerCase();
+			var len = plArr.length;
+			for (var i = 0; i < len; i++) {
+				if (plArr[i].toLowerCase() === find) {
+					return i;
+				}
+			}
+			return -1;
+		};
 
 
-		// Possible sub-event types
-		var subInfoType = [
-		//	[subInfoTypeName,  subInfoTypeAbbreviation, dataType]
-		];
-*/
-		var eventType = [
-		//	[eventTypeName, lowercaseSearchValue ,eventTypeAbbreviation]
-		['Adoption', 'adopt', 'ap'],				// An adoption event.
-		['AdultChristening', 'adult+christen', 'ac'],		// An adult christening event.
-		['Annulment', 'annul','an'],			// An annulment event of a marriage.
-		['Baptism', 'bapt', 'bp'],				// A baptism event.
-		['BarMitzvah', 'barmit', 'brm'],			// A bar mitzvah event.
-		['BatMitzvah', 'batmit', 'btm'],			// A bat mitzvah event.
-		['Birth', 'birth', 'b'],					// A birth event.
-		['Blessing', 'blesd', 'bl'],				// A an official blessing event, such as at the hands of a clergy member or at another religious rite.
-		['Burial', 'bur', 'br'],				// A burial event.
-		['Census', 'cens', 'c'],				// A census event.
-		['Christening', 'christen', 'ch'],			// A christening event at birth. Note: use AdultChristening for a christening event as an adult.
-		['Circumcision', 'circumcis', 'cc'],			// A circumcision event.
-		['Confirmation', 'confirm', 'cf'],			// A confirmation event (or other rite of initiation) in a church or religion.
-		['Cremation', 'cremat', 'cr'],			// A cremation event after death.
-		['Death', 'death', 'd'],					// A death event.
-		['Divorce', 'divorce', 'dv'],				// A divorce event.
-		['DivorceFiling', 'divorce+fil', 'df'],		// A divorce filing event.
-		['Education', 'educat', 'ed'],			// A education or an educational achievement event (e.g. diploma, graduation, scholarship, etc.).
-		['Engagement', 'engage', 'en'],			// An engagement to be married event.
-		['Emigration', 'emigrat', 'em'],			// An emigration event. (visit a country)
-		['Excommunication', 'excommun', 'ex'],		// An excommunication event from a church.
-		['FirstCommunion', 'communion', 'fc'],		// A first communion event.
-		['Funeral', 'funeral', 'f'],				// A funeral event.
-		['Immigration', 'immigrat', 'i'],			// An immigration event.	(move to a country)
-		['LandTransaction', 'land+transact', 'l'],		// A land transaction event.
-		['Marriage', 'marri', 'm'],				// A marriage event.
-		['MilitaryAward', 'military+award', 'ma'],		// A military award event.
-		['MilitaryDischarge', 'military+discharge', 'md'],	// A military discharge event.
-		['Mission', 'mission', 'ms'],				// A mission event.
-		['MoveFrom', 'move+from', 'mf'],				// An event of a move (i.e. change of residence) from a location.
-		['MoveTo', 'move+to', 'mt'],				// An event of a move (i.e. change of residence) to a location.
-		['Naturalization', 'naturaliz', 'nt'],		// A naturalization event (i.e. acquisition of citizenship and nationality).
-		['Ordination', 'ordinat', 'ord'],			// An ordination event.
-		['Retirement', 'retire', 'ret']			// A retirement event.
-		];
+		var comparePlace0 = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pplace = personProp.place;
+			var splace = srcProp.place;
+			if (!pplace || !splace) {
+				return undefined;
+			}
+			var srcTxt = splace[0];
+			var find = pplace[0];
+			if (plMatch(find,splace[0])) {
+				return ['exact', srcTxt];
+			}
+			var loc = plMatchLoc(splace,find);
+			if (loc >= 0) {
+				return ['near', splace[loc]];
+			}
+			srcTxt = [''];
+			slTxt.addPlace(splace, srcTxt);
+			return ['no', srcTxt[0]];
+		};
+
+		var comparePlace1 = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pplace = personProp.place;
+			var splace = srcProp.place;
+			if (!pplace || !splace) {
+				return undefined;
+			}
+			var srcTxt = splace[1];
+			var find = pplace[1];
+			if (plMatch(find,splace[1])) {
+				return ['exact', srcTxt];
+			}
+			var loc = plMatchLoc(splace,find);
+			if (loc >= 0) {
+				return ['near', splace[loc]];
+			}
+			srcTxt = [''];
+			slTxt.addPlace(splace, srcTxt);
+			return ['no', srcTxt[0]];
+		};
+
+		var comparePlace2 = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pplace = personProp.place;
+			var splace = srcProp.place;
+			if (!pplace || !splace) {
+				return undefined;
+			}
+			var srcTxt = splace[2];
+			var find = pplace[2];
+			if (plMatch(find,splace[2])) {
+				return ['exact', srcTxt];
+			}
+			var loc = plMatchLoc(splace,find);
+			if (loc >= 0) {
+				return ['near', splace[loc]];
+			}
+			srcTxt = [''];
+			slTxt.addPlace(splace, srcTxt);
+			return ['no', srcTxt[0]];
+		};
+
+		var comparePlace3 = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var pplace = personProp.place;
+			var splace = srcProp.place;
+			if (!pplace || !splace) {
+				return undefined;
+			}
+			var srcTxt = splace[3];
+			var find = pplace[3];
+			if (plMatch(find,splace[3])) {
+				return ['exact', srcTxt];
+			}
+			var loc = plMatchLoc(splace,find);
+			if (loc >= 0) {
+				return ['near', splace[loc]];
+			}
+			srcTxt = [''];
+			slTxt.addPlace(splace, srcTxt);
+			return ['no', srcTxt[0]];
+		};
+
+		var compareGivName = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			
+			var find = personProp[0];
+			var sGName = srcProp[0];
+			var srcTxt = sGName;
+			if (find === sGName) {
+				return ['exact', srcTxt];
+			}
+			var pGNames = slTxt.splitIntoWords(find);
+			var sGNames = slTxt.splitIntoWords(sGName);
+			var pLen = pGNames.length;
+			var sLen = sGNames.length;
+			if (pLen > 1 || sLen > 1) {
+				for (var i = 0; i < pLen; i++) {
+					if (sGNames.indexOf(pGNames[i]) >= 0) {
+						return ['near', srcTxt];
+					}
+				}
+			}
+			return ['no', srcTxt];
+		};
+
+		var compareFamName = function (personProp, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var find = personProp[1];
+			var sFName = srcProp[1];
+			var srcTxt = sFName;
+			if (find === sFName) {
+				return ['exact', srcTxt];
+			}
+			return ['no', srcTxt];
+		};
+
+		var compareProp = function (find, srcProp) {
+			if (!srcProp) {
+				return undefined;
+			}
+			var srcTxt = srcProp;
+			if (find === srcProp) {
+				return ['exact', srcTxt];
+			}
+			return ['no', srcTxt];
+		};
+
+		var compareFuncs = {
+			M: compareMonthDay,
+			Y: compareYear,
+			P0: comparePlace0,
+			P1: comparePlace1,
+			P2: comparePlace2,
+			P3: comparePlace3,
+			G: compareGivName,
+			F: compareFamName,
+			default: compareProp
+		};
+
+		var getMonthDay = function (event) {
+
+			return slTxt.dayMonth(event.date);
+		};
+
+		var getYear = function (event) {
+
+			return event.date[2];
+		};
+
+		var getPlace0 = function (event) {
+			return event.place[0];
+		};
+
+		var getPlace1 = function (event) {
+			return event.place[1];
+		};
+
+		var getPlace2 = function (event) {
+			return event.place[2];
+		};
+
+		var getPlace3 = function (event) {
+			return event.place[3];
+		};
+
+		var getGivName = function (event) {
+			return event[0]; 
+		};
+
+		var getFamName = function (event) {
+			return event[1];
+		};
+
+		var getProp = function (event) {
+			return event;
+		};
+
+		var valueFuncs = {
+			M: getMonthDay,
+			Y: getYear,
+			P0: getPlace0,
+			P1: getPlace1,
+			P2: getPlace2,
+			P3: getPlace3,
+			G: getGivName,
+			F: getFamName,
+			gender: getProp,
+		};
+
+		var getEventValue = function (event, prop, partId) {
+			if (event) {
+				return valueFuncs[partId ? partId : prop](event);
+			}
+			return undefined;
+		};
+
+		slSel.getCompare = function (person,seqNum,other) {
+			var selIdx;
+			var seqTxt = seqNum[0];
+			var eventId = '';
+			var partId = '';
+			var len = seqTxt.length;
+			for (var i = 0; i < len; i++) {
+				var chr = seqTxt.charAt(i);
+				if (chr === chr.toLowerCase() && chr !== chr.toUpperCase()) {
+					eventId += chr;
+				} else {
+					partId += chr;
+				}
+			}
+			if (seqNum.length > 1) {
+				selIdx = seqNum[1];
+				partId += selIdx;		// Should always be partId in this case
+			}
+			var prop = getPersonProperty(eventId);
+			var event = person[prop];
+			if (!event) {
+				event = other[prop];
+			}
+			var eventVal = getEventValue(event, prop, partId);
+			var cmpFunc = compareFuncs[partId ? partId : 'default'];
+			return {
+				prop: prop,
+				compareFunc: cmpFunc,
+				event: event,
+				target: eventVal
+			};
+		};
+
+
 
 /*
 		// Possible sub-event types
 		var subEventType = [
-			//	[subEventTypeName,  subEventTypeAbbreviation
-			['DayAndMonth', 'M'],	// month and Day of event
+			//	[subEventTypeName,  subEventTypeAbbreviationProperty
+			['Day And Month', 'M'],	// month and Day of event
 			['Year', 'Y'],			// year of event
 			['Place', 'P']			// place of event
 		];
@@ -122,6 +480,7 @@
 		//	[event]-->[EVENTTYPE]
 		//------------------------------------------------------------------------------------------
 		//	'n' = person's name		-->		'G' = given name(s)		'F' = family name(s)
+		//  'g' = person's gender
 		//	'b' = birth				-->		'M' = day and month		'Y' = year	'P' = place <#>
 		//	'h' = christening		-->		'M' = day and month		'Y' = year	'P' = place <#>
 		//	'm'	= marriage			-->		'M' = day and month		'Y' = year	'P' = place <#>
@@ -154,13 +513,18 @@
 		//	'RdP0'	death Place first part (town?)		'RdP1'	death Place second part (county?)
 		//	'RdP2'	death Place third part (state?)		'RdP3'	death Place fourth part	(nation?)
 
+		// selectRects = [selectGrpNumber][whichSelectRect][selID,rectangle]
 		var selectRects = [[],[],[]];
 		var idMap = new Map();
 		var mapBuilt = false;
 		var readyToSelect = false;
 		// region 0 is person area, 1 is attached area, 2 is unattached area
 		var selectRegions = [];
+		var attachedSelection = [];
 
+		
+
+		
 
 		slSel.setRegions = function (align) {
 			selectRegions.length = 0;
@@ -169,23 +533,13 @@
 			selectRegions.push(align.unAttBox);
 		};
 
-		slSel.attSrc = function () {
-			return 1;		// index into selectRects for attached Source objects
-		};
+		// index into selectRects for attached Source objects
+		slSel.attSrc = 1;
+		// index into selectRects for unattached Source objects
+		slSel.unAttSrc = 2;
 
-		slSel.unAttSrc = function () {
-			return 2;		// index into selectRects for unattached Source objects
-		};
-
-		var eventTypes = 'bhdmx';
-		var eventNames = ['birth', 'christening', 'death', 'marriage', 'birth and death'];
-
-		slSel.eventName = function (eventType) {
-			var idx = eventTypes.indexOf(eventType);
-			if (idx === -1) {
-				return 'unknown';
-			}
-			return eventNames[idx];
+		slSel.attRects = function () {
+			return selectRects[slSel.attSrc];
 		};
 
 		var whitespace = ' \t\n\r\v';
@@ -346,13 +700,15 @@
 					}
 				}
 			}
-//			var lwrcTxt = text.toLowerCase();
-			for (i = 0, len = eventType.length; i < len; i++) {
-				find = eventType[i][1];
-				loc = text.indexOf(find);
-				while (loc >= 0) {
-					foundFields.push([loc, 'e', eventType[i][1].toLowerCase()]);
-					loc = text.indexOf(find, loc + find.length);
+			//			var lwrcTxt = text.toLowerCase();
+			for (var prop in eventTypes) {
+				if (eventTypes.hasOwnProperty(prop)) {
+					find = prop[1];
+					loc = text.indexOf(find);
+					while (loc >= 0) {
+						foundFields.push([loc, 'e', prop[1].toLowerCase()]);
+						loc = text.indexOf(find, loc + find.length);
+					}
 				}
 			}
 			for (i = 0, len = relType.length; i < len; i++) {
@@ -426,22 +782,14 @@
 			return idMap.get(id);
 		};
 
-		slSel.getPersonEvent = function (person, id) {
-			if (id.charAt(0) === 'b') {
-				return person.birth;
-			}
-			if (id.charAt(0) === 'd') {
-				return person.death;
-			}
-			if (id.charAt(0) === 'h') {
-				return person.crstn;
-			}
-			return undefined;
-		};
-
+		
 		slSel.clear = function () {
 			readyToSelect = false;
 			selectRects = [[], [], []];
+		};
+
+		slSel.clearAtt = function () {
+			selectRects[slSel.attSrc].length = 0;
 		};
 
 		slSel.ready = function () {
@@ -583,6 +931,42 @@
 				return [pNumber, gNumber, txt, endNumber[0]];
 			}
 			return [pNumber, gNumber, selId.substring(scan, selId.length)];
+		};
+
+
+		slSel.clearAttSel = function() {
+			// set attachedSelection to be an array of undefined values
+			// for each attached selection rectangle
+			var len = selectRects[slSel.attSrc].length;
+			attachedSelection = Array.apply(null,new Array(len)).map(function () {});
+		};
+
+		var addValue = function (attSelMatch, value) {
+			var len = attSelMatch.length;
+			for (var i = 0; i < len; i++) {
+				var test = attSelMatch[i];
+				if (test[0] === value) {
+					++test[1];
+					return;
+				}
+			}
+			attSelMatch.push([value, 1]);
+		};
+
+		slSel.getAttSel = function (srcIdx) {
+			return attachedSelection[srcIdx];
+		};
+		
+		slSel.addAttSel = function (srcIdx, value, match) {
+			if (!attachedSelection[srcIdx]) {
+				attachedSelection[srcIdx] = {};
+			}
+			var attSel = attachedSelection[srcIdx];
+			if (attSel[match]) {
+				addValue(attSel[match],value);
+			} else {
+				attSel[match] = [[value, 1]];
+			}
 		};
 
 		return slSel;

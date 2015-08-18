@@ -16,8 +16,8 @@
 
 
 	// Handle mouse events
-	slApp.factory('slInpt', ['$window','$state', 'slCtx2', 'slActv', 'slSel', 'slAnlzSel', 'slSrc', 'alert',
-		function ($window, $state, slCtx2, slActv, slSel, slAnlzSel, slSrc, alert) {
+	slApp.factory('slInpt', ['$window','$state', 'slCtx2', 'slActv', 'slSel', 'slAnlz', 'slSrc', 'alert',
+		function ($window, $state, slCtx2, slActv, slSel, slAnlz, slSrc, alert) {
 			var slInpt = {};
 
 			var highlighted;	// [grp,idx] of SR highlited when cursor enters it's area
@@ -98,7 +98,7 @@
 			};
 
 			slInpt.viewInFS = function () {
-				slAnlzSel.startNewFSPersonTab();
+				slAnlz.startNewFSPersonTab();
 			};
 
 			slInpt.logout = function () {
@@ -208,6 +208,7 @@
 				if (slSel.ready()) {
 					if (event.ctrlKey) {
 						if (highlighted) {
+							slAnlz.deselect();
 							selectOpts[highlighted[0]]();
 							return;
 						}
@@ -226,12 +227,12 @@
 					}
 					if (selected) {
 						deselect();
-						slAnlzSel.deselect();
+						slAnlz.deselect();
 					}
 					selected = highlighted;
 					if (selected) {
 						select();
-						slAnlzSel.select(selected);
+						slAnlz.select(selected);
 					}
 				}
 			};

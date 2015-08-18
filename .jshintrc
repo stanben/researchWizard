@@ -24,6 +24,7 @@
     "console": false,
     "window": false,
     "document": false,
+    "Image": false,
     "alert": false,
     "prompt": false,
     "setTimeout": false,
