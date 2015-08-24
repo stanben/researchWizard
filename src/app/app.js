@@ -17,18 +17,25 @@
 	});
 
 	slApp.config(function (fsApiProvider) {	// configure fsApi Provider
+		/*
+		var url = window.location.href;
+		var loc = url.indexOf('/#');
+		var redirectUri;
+		if (loc > 0) {
+			redirectUri = url.slice(0, loc);
+		} else {
+			redirectUri = url;
+		}
+		*/
 		fsApiProvider
 		.setClientId('a02j0000006na3iAAA')
 		//.setEnvironmentName('sandbox')
 		//.setEnvironmentName('beta')
 		//.setEnvironmentName('staging')
 		.setEnvironmentName('production')
-		
-		//.setRedirectUri('http://localhost:9000/#!/auth');
 		.setRedirectUri('http://localhost:61848');
 		//.setRedirectUri('http://sourcelinkfs.azurewebsites.net');
-
-		//.setRedirectUri('http://demo.werelate.org/#/auth');
+		//.setRedirectUri(redirectUri);
 	});
 
 
@@ -93,15 +100,9 @@
 		//$scope.environment = 'Staging';
 		slCSS.init();
 		$scope.environment = 'Production';
-
-		$scope.changeID = //$timeout(function () {
-			slInpt.changeID;
-		//});
-
+		$scope.changeID = slInpt.changeID;
 		$scope.viewInFS = slInpt.viewInFS;
-
 		$scope.logout = slInpt.logout;
-
 		$scope.returnToCanvas = slInpt.returnToCanvas;
 
 		$scope.$on('$stateChangeStart', function (event, toState) {	// listen for $stateChangeStart event

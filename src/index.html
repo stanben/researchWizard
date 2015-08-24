@@ -128,14 +128,14 @@
             <a
                 class="navbar-brand" href="/">
                 <img src="assets/favicon-32x32.png"> source<strong>Link</strong>
-</a>
+            </a>
             <span data-ng-show="busy" style="float: left; line-height: 50px">
                 <i class="fa fa-spinner fa-spin"> </i>
             </span>
         </div>
         <div id="navbar-msg"
             class="navbar-header" style="padding:4px;margin:10px 8px 4px;border: 3px solid #668877;border-radius: 5px;background-color:#DDEEDD;">
-                <p >Welcome to sourceLink {{environment}}: Select <i style ="color:#BEF0FF; background-color:#428BCA;">Sign In to familySearch</i> to load data from Family Tree and get started!</p>
+                <p >Welcome to sourceLink! Select <i style ="color:#BEF0FF; background-color:#428BCA;">Sign In to familySearch</i> to load your family information.</p>
         </div>  
         <div class="collapse navbar-collapse header-collapse">
                 
@@ -167,35 +167,85 @@
         <div fs-re-authenticate> </div>
         <div class="container" ui-view> </div>
         <!-- open default view using ui router-->
-    </div>
-    <div id="description">
-        <p></p>
-        <p><strong>sourceLink</strong> is a tool used to view and evaluate sources of a person and his immediate family members.</p>
+    </div> 
+    <div id="description" style="padding:20px;margin:10px 8px 4px;">
+        <p>
+            <strong>sourceLink</strong> is a tool used to view and evaluate sources of a person and his immediate family members.
+        </p>
         <p>
             Within the navagation header at the top of the web page is an
-            <strong style="border: 3px solid #668877; background-color:#DDEEDD;">information box</strong> which provides hints as what to do as well as an information summary when an action is performed. 
-            At times sourceLink will shorten words for names and places in order to fit the space available within the web page.  When this word is selected, the information box will show the entire word.
+            <strong style="border: 3px solid #668877; background-color:#DDEEDD;">information box</strong>
+            which provides hints as what to do as well as an information summary when an action is performed.
+            At times sourceLink will shorten words for names and places in order to fit the space available
+            within the web page.  When this word is selected, the information box will show the entire word.
         </p>
         <p>
-            The <strong>person area</strong> is set to a background color of
-            <strong style="background-color:#AACBDA;">blue</strong> if the reference person is male,
-            <strong style="background-color:#efbfbf;">pink</strong> if the reference person is female, or
-            <strong style="background-color:#c2c2c2;">grey</strong> if the reference person's gender is unknown.
-                The name and vital information associated with the reference person is at the top of the person area. Below the reference person and to the left is his spouse(s) and children of that spouse.
-                Below the reference person and to the right are his parents and siblings. Each piece of vital information in the person area is highlighted with a 
-            <strong style="outline:#ff0000;">red box outline</strong> when the mouse points at it. Clicking on a piece of vital information will select it which is displayed with
-            <strong style="background-color:#ff0000;">red fill</strong>. When selected, all of the sources which confirm this information are highlited.
-            if the <strong>ctrl</strong> key is pressed while selecting a piece of vital information, then the person associated with this information becomes the
-            <strong>reference person</strong> and all areas are updated to reflect the information associated with this change.
+            The display area is divided into three regions.  The square region at the bottom center is the
+            <strong class="actpersarea"> Active Person Area</strong>.
+            This region is surrounded at the left, top and right sides by the
+            <strong class="attsourcesarea"> Attached Sources Area</strong>.
+            The final region <strong class="posssourcesarea"> Possible Sources Area</strong>
+            is adjacent to the left, top and right edges of the display area.
         </p>
         <p>
-            Within the region set to a background color of green: 
-            <strong style ="background-color:#40AD82;">attached sources</strong> are placed in a chronological order from birth to death.
+            The <strong class="actpersarea"> Active Person Area</strong> begins at the top line with a colored shape
+            identifiying the active person's gender followed by his full name. Background color for this area also reflects gender:
         </p>
         <p>
-            Within the region set to a background color of tan: 
-            <strong style="background-color:#C3AD82;">possible sources</strong> are also placed in chronological order from birth to death.
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <img src="assets/Male.png" style="width:16px;height:16px;"> <strong class="maleperson">John Doe</strong>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <img src="assets/Female.png" style="width:16px;height:16px;"> <strong class="femaleperson">Mary Doe</strong>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <img src="assets/Unknown.png" style="width:16px;height:16px;"> <strong class="unknownperson">Chris Doe</strong>
         </p>
-</div>
+        <p>
+            Directly below the first line is that active person's vital information and familysearch record number.
+            Below the reference person information and to the left is his spouse(s) and children of each spouse.
+            To the right are similarly his parents and siblings. Marriage information is provided below each spouse
+            and set of parents.  Children and Sibling's last names are ignored if they are same last name as the father.
+            Birth years and places are provided with each child and sibling.
+        </p>
+        <p>
+            The <strong class="attsourcesarea"> Attached Sources Area</strong>
+            contains all sources that have been attached to the active person. The sources are ordered
+            chronlogically from the earliest events (birth) to the latest events(death) in a clockwise direction within
+            this area. Sources which are of the same event (such as birth, marriage and death records)
+            are merged into a single source group. A source group title is the number of sources in the group followed
+            by the type of records:  <strong class="attsourcesarea">3 Marriage Records</strong>.
+</p>
+        <p>
+            The<strong class="posssourcesarea"> Possible Sources Area</strong> as the name implies, contains sources which are
+            not attached to the active person but are found to be possible sources for that person.
+            <strong class="posssourcesarea">Record Hints</strong> are not attached sources and would appear in this area marked
+            by the record hint icon: <img src="assets/RecordHint.png" style="width:16px;height:16px;">.
+        </p>
+        <p>
+            Each piece of vital information in the <strong class="actpersarea"> Active Person Area</strong> is 
+            <strong class="vitallocation">highlighted</strong> when the mouse passes over it. Clicking on a piece of vital
+            information will <strong class="vitalselect">select it</strong>. When selected, all sources in the
+            <strong class="attsourcesarea"> Attached Sources Area</strong> and the <strong class="posssourcesarea"> Possible Sources Area</strong>
+            comparable information, will display values that are highlited: <strong class="vitalconfirm">confirm</strong>,
+            <strong class="vitalnear">partially confirm</strong>, or <strong class="vitalno">contradict</strong> the selected information.
+            Clicking on a piece of vital information while holding down the <strong>Ctrl</strong> key will cause the person associated with this
+            information to become the new Active person. All areas will be updated to reflect the information associated with the new active person.
+        </p>
+        <p>
+            Each source in the <strong class="attsourcesarea"> Attached Sources Area</strong>
+            and <strong class="posssourcesarea"> Possible Sources Area</strong> is also
+            <strong class="sourcelocation">highlighted</strong> when the mouse passes over it.
+            Clicking on a piece of vital information will <strong class="sourceselect">select it</strong>.
+            When selected, the information contained within the selected source or group of sources will be displayed in tabular form.
+            Clicking on a source while holding down the <strong>Ctrl</strong> key will cause the source to be highlited in a table
+            along with all other sources that have information comparable to the selected source's information as well as comparable
+            information of the person. All comparable information in the table will be highlited with
+            <strong class="vitalconfirm">confirm</strong>, <strong class="vitalnear">partially confirm</strong>,
+            or <strong class="vitalno">contradict</strong> marks.
+        </p>
+        <p>
+            In order to close an active table and return to the display area, click on the <strong class="tablereturn">RETURN</strong>.
+            button above the table.
+        </p>
+    </div>
 </body>
 </html>

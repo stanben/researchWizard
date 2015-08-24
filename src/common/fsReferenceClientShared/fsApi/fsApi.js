@@ -28,7 +28,8 @@ angular.module('fsReferenceClientShared')
 
 	this.$get = function($window, $http, $q, $timeout, $rootScope) {
 		if ( client_id && environment && redirect_uri ) {
-		$window.FamilySearch.init({
+			//$window.FamilySearch.init({
+			$window.FamilySearch = new FamilySearch({
 			client_id: client_id,
 			app_key: client_id,
 			environment: environment,

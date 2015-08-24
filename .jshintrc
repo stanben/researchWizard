@@ -28,6 +28,7 @@
     "alert": false,
     "prompt": false,
     "setTimeout": false,
-    "sweetAlert": false
+    "sweetAlert": false,
+    "Map":  false
   }
 }

@@ -3,7 +3,7 @@
   "camelcase": true,
   "curly": true,
   "eqeqeq": true,
-  "es5": true,
+
   "forin": true,
   "immed": true,
   "latedef": "nofunc",
@@ -23,7 +23,7 @@
     "angular": false,
     "_": false,
     "console": false,
-
+    "Map":  false,
     "define": false,
     "describe": false,
     "it": false,

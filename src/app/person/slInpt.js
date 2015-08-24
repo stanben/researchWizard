@@ -29,7 +29,7 @@
 			};
 
 			var select = function () {
-				slCtx2.highliteSelection(slSel.rect(selected));
+				slCtx2.highliteSelection(selected[0],slSel.rect(selected));
 			};
 
 			/* ====================== Unused ===========================
@@ -47,7 +47,7 @@
 			};
 
 			var highLight = function () {
-				slCtx2.highlite(slSel.rect(highlighted));
+				slCtx2.highlite(highlighted[0],slSel.rect(highlighted));
 			};
 
 			slInpt.clear = function () {
@@ -192,7 +192,7 @@
 			// print the complete contents of this record
 			var selectAttached = function () {
 				var person = slActv.who();
-				slSrc.select(person,highlighted[1]);
+				slAnlz.attSource(person,highlighted[1]);
 				
 			};
 

@@ -65,7 +65,7 @@
 			var selectInfo = {
 				seqNum: seqNum,
 				itemName: slSel.eventText(seqNum[0]),
-				compare: slSel.getCompare(father, seqNum),
+				compare: slSel.getCompare(father, seqNum, parents),
 				relation: 'father'
 			};
 			if (slSrc.analyze(person, father, selectInfo, slSel.addAttSel) > 0) {
@@ -209,11 +209,22 @@
 		};
 
 
+		slAnlz.attSource = function (person, which) {
+			var srcGrp = person.sources[which];
+			var len = srcGrp.length;
+			if (len > 1) {
+				document.getElementById('navbar-msg').innerHTML = 'Comparing this source group with all the others is comming soon!!!';
+			} else {
+				document.getElementById('navbar-msg').innerHTML = 'Comparing this source with all the others is comming soon!!!';
+			}
+			
+		};
+
 		// Provide information as to how this source confirms
 		// or contradicts info for the active person
 		var selectAtt = function (selected) {
-			var selCode = slSel.selId(selected);
-			console.log('selectAtt is not implemented yet:' + selCode[0]);
+			var person = slActv.who();
+			slSrc.select(person, selected[1]);
 		};
 
 		// Provide information as to how this source confirms

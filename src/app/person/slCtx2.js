@@ -76,17 +76,33 @@
 				}
 			};
 
-			slCtx2.highliteSelection = function (rect) {
+			// Can set different color for highliting within each region
+			var selectionHltColor = [
+				slCSS.highliteSelection,
+				slCSS.highliteLocation,
+				slCSS.highliteLocation
+			];
+
+			slCtx2.highliteSelection = function (region, rect) {
 				slCtx2.lineWidth(3);
-				var color = slCSS.highliteLocation;
+				var color = selectionHltColor[region];
 				slCtx2.setDrawStyle(color.fill, color.stroke);
 				slCtx2.fillRect(rect);
 				slCtx2.drawRect(rect);
 			};
 
-			slCtx2.highlite = function (rect) {
-				slCtx2.lineWidth(1);
-				var color = slCSS.highliteSelection;
+			// Can set different color for highliting within each region
+			var locationHltColor = [
+				slCSS.highliteSelection,
+				slCSS.highliteLocation,
+				slCSS.highliteLocation
+			];
+
+			var locationHltWidth = [2, 3, 3];
+
+			slCtx2.highlite = function (region, rect) {
+				slCtx2.lineWidth(locationHltWidth[region]);
+				var color = locationHltColor[region];
 				slCtx2.setDrawStyle(color.fill, color.stroke);
 				slCtx2.drawRect(rect);
 			};

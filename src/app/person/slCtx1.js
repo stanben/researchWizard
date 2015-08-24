@@ -440,7 +440,11 @@
 
 			var reducePlace = function (place, reduceW) {
 				// Work from the back to reduce
+				
 				var totalReduced = 0;
+				if (!place) {
+					return totalReduced;
+				}
 				var results;
 				var sc = slCtry.extractStateCountry(place);
 				var plLen = place.length;

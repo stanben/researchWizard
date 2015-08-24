@@ -423,7 +423,7 @@
 			}
 			var prop = getPersonProperty(eventId);
 			var event = person[prop];
-			if (!event) {
+			if (!event && other) {
 				event = other[prop];
 			}
 			var eventVal = getEventValue(event, prop, partId);
@@ -514,7 +514,7 @@
 		//	'RdP2'	death Place third part (state?)		'RdP3'	death Place fourth part	(nation?)
 
 		// selectRects = [selectGrpNumber][whichSelectRect][selID,rectangle]
-		var selectRects = [[],[],[]];
+		var selectRects = [[], [], []];
 		var idMap = new Map();
 		var mapBuilt = false;
 		var readyToSelect = false;
