@@ -2,7 +2,7 @@
 	'use strict';
 	var slApp = angular.module('sourceLink');
 
-	slApp.factory('slUtl',  function () {
+	slApp.factory('slUtl',  function ($q, $rootScope, fsApi) {
 		var slUtl = {};
 
 		// return true if the object is empty
@@ -32,6 +32,42 @@
 				}
 			}
 			return -1;
+		};
+
+		slUtl.refresh = function (target, source) {
+			for (var propName in target) {
+				if (target.hasOwnProperty(propName) && propName.charAt(0) !== '_') {
+					delete target[propName];
+				}
+			}
+			_.extend(target, source);
+		};
+
+		slUtl.getChildrenWithParentsId = function (children, childRelationships) {
+			return _.map(children, function (child) {
+				return {
+					person: child,
+					parentsId: _.find(childRelationships, function (rel) { return rel.$getChildId() === child.id; }).id
+				};
+			});
+		};
+
+		var currentUser = null;
+
+		$rootScope.$on('newSession', function () {
+			currentUser = null;
+		});
+
+		slUtl.getUser = function () {
+			if (!!currentUser) {
+				return $q.when(currentUser);
+			}
+			else {
+				return fsApi.getCurrentUser().then(function (response) {
+					currentUser = response.getUser();
+					return currentUser;
+				});
+			}
 		};
 
 		return slUtl;

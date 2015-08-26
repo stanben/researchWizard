@@ -3,8 +3,8 @@
 	var slApp = angular.module('sourceLink');
 
 	// Manage the active person
-	slApp.factory('slActv', ['fsApi', 'fsUtils', 'slPpl', 'slDrw', 'slSel', 'slSrc', 'slTxt', 'alert',
-		function (fsApi, fsUtils, slPpl, slDrw, slSel, slSrc, slTxt, alert) {
+	slApp.factory('slActv', ['fsApi', 'slUtl', 'slPpl', 'slDrw', 'slSel', 'slSrc', 'slTxt', 'alert',
+		function (fsApi, slUtl, slPpl, slDrw, slSel, slSrc, slTxt, alert) {
 			var slActv = {};
 			var personId;	// id of active person
 			var processFamiliesCount = 0;
@@ -26,7 +26,7 @@
 						wife: pwr.getPerson(couple.$getWifeId()),
 						relationshipId: couple.id,
 						couple: couple,
-						children: fsUtils.getChildrenWithParentsId(pwr.getChildrenOf(spouseId), pwr.getChildRelationshipsOf(spouseId))
+						children: slUtl.getChildrenWithParentsId(pwr.getChildrenOf(spouseId), pwr.getChildRelationshipsOf(spouseId))
 					};
 				});
 				// next add families with children but no couple relationship
@@ -67,7 +67,7 @@
 					families.push({
 						husband: father ? pwr.getPerson(father) : null,
 						wife: mother ? pwr.getPerson(mother) : null,
-						children: fsUtils.getChildrenWithParentsId(pwr.getChildrenOf(spouseId), pwr.getChildRelationshipsOf(spouseId))
+						children: slUtl.getChildrenWithParentsId(pwr.getChildrenOf(spouseId), pwr.getChildRelationshipsOf(spouseId))
 					});
 				}
 				return families;
@@ -91,7 +91,7 @@
 					if (spouseId) {
 						couple = response.getSpouseRelationship(spouseId);
 					}
-					var children = fsUtils.getChildrenWithParentsId(
+					var children = slUtl.getChildrenWithParentsId(
 					response.getChildrenOf(spouseId),
 					response.getChildRelationshipsOf(spouseId));
 					if (personId === family.husband.id || personId === family.wife.id) {

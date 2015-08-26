@@ -12,12 +12,12 @@
 		});
 	});
 
-	slApp.controller('HomeController', function ($scope, $state, $rootScope, fsApi, fsCurrentUserCache) {
+	slApp.controller('HomeController', function ($scope, $state, $rootScope, fsApi, slUtl) {
 		var startPersonId /* = 'K422-PFX'*/;
 		$scope.signIn = function () {
 			fsApi.getAccessToken().then(function() {
 				$rootScope.$emit('newSession');
-				fsCurrentUserCache.getUser().then(function(user) {
+				slUtl.getUser().then(function(user) {
 				$state.go('person', { personId: startPersonId ? startPersonId : user.personId });	// activate person sending personID as parameter
 				});
 			});

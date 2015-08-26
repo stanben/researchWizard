@@ -27,7 +27,7 @@
 
 	slApp.controller('PersonController',
 		function ($scope, $state, $rootScope, person, personId, fsApi,
-			fsUtils, fsCurrentUserCache, slCtx1, slCtx2, slDrw, slPpl,
+			slUtl, slCtx1, slCtx2, slDrw, slPpl,
 			slInpt, slActv, slAnlz) {
 
 		/*
@@ -59,15 +59,10 @@
 		$scope.slInpt = slInpt;
 		slActv.setPerson(person,personId);
 		slAnlz.deselect();
-		/*
-		sources.forEach(function (source) {
-			fsUtils.mixinStateFunctions($scope, source);
-		});
-		*/
 
 		var unbindRestored = $rootScope.$on('restored', function () {
 			fsApi.getPerson($scope.person.id).then(function (response) {
-				fsUtils.refresh($scope.person, response.getPerson());
+				slUtl.refresh($scope.person, response.getPerson());
 			});
 		});
 		$scope.$on('$destroy', unbindRestored);
@@ -78,7 +73,7 @@
 			person.$delete(changeMessage).then(function () {
 				person._busy = false;
 				// should we display deleted person here like FS does instead of returning home?
-				fsCurrentUserCache.getUser().then(function (user) {
+				slUtl.getUser().then(function (user) {
 					$state.go('person', { personId: user.personId });
 					$rootScope.$emit('alert', { level: 'success', text: person.$getDisplayName() + ' deleted' });
 				});

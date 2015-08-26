@@ -4,13 +4,152 @@
 (function () {
 	'use strict';			// Run in strict mode
 	var slApp = angular.module('sourceLink', [
-	'fsReferenceClientShared',	// depends on these modules
+	// depends on these modules
+//	'loDash',
+//	'angularMoment',
+//	'panzoom',
+//	'ui.bootstrap',
+//	'infinite-scroll',
+//	'angular-growl',
 	'templates-app',
 	'templates-common',
 	'ui.bootstrap',
 	'ui.router.state',
 	'ui.router'
 	]);
+
+	slApp.provider('fsApi', function () {
+		/* jshint camelcase:false */
+		var client;
+		var client_id = '';
+		var environment = '';
+		var redirect_uri = '';
+
+		this.setClientId = function (appKey) {
+			client_id = appKey;
+			return this;
+		};
+
+		this.setEnvironmentName = function (environmentName) {
+			environment = environmentName;
+			return this;
+		};
+
+		this.setRedirectUri = function (authCallback) {
+			redirect_uri = authCallback;
+			return this;
+		};
+
+		this.$get = function ($window, $http, $q) {
+			if (client_id && environment && redirect_uri) {
+				client = new $window.FamilySearch({
+					app_key: client_id,
+					environment: environment,
+					auth_callback: redirect_uri,
+					http_function: $http,				// $.ajax,
+					deferred_function: $q.defer,		// $.Deferred
+					/*
+										timeout_function: $timeout,
+										save_access_token: true,
+										auto_expire: true,
+										auto_signin: false,
+										expire_callback: function () {
+											$rootScope.$emit('sessionExpired');
+										}
+					*/
+				});
+			}
+
+			/*
+						$window.FamilySearch.Person.prototype._isMale = function () {
+							return this.gender && this.gender.type === 'http://gedcomx.org/Male';
+						};
+			*/
+
+			return client;
+		};
+
+	});
+
+	slApp.provider('fsLocation', function () {
+		var locationFunctions;
+
+		// locationFns = { // each function returns {prefix, path, search}
+		//  getPersonLocation(personId)
+		//  getCoupleLocation(coupleId)
+		//  getParentsLocation(parentsId)
+		//  getTreeLocation(personId)
+		//  getFindAddLocation({husbandId,wifeId,fatherId,motherId,childIds,coupleId,parentsId,returnToPersonId,returnToCoupleId,returnToParentsId})
+		//  getSourceBoxLocation({personId,coupleId,parentsId})
+		// }
+		this.configure = function (locationFns) {
+			locationFunctions = locationFns;
+		};
+
+		this.$get = function ($location) {
+			function join(opts) {
+				var keyValuePairs = [];
+				for (var prop in opts) {
+					if (opts.hasOwnProperty(prop)) {
+						keyValuePairs.push(encodeURIComponent(prop) + '=' + encodeURIComponent(opts[prop]));
+					}
+				}
+				return keyValuePairs.join('&');
+			}
+
+			function getUrl(location) {
+				var search = join(location.search);
+				return encodeURI(location.prefix) + encodeURI(location.path) + (!!search ? '?' + search : '');
+			}
+
+			function setLocation(location) {
+				$location.path(location.path);
+				if (!!location.search) {
+					$location.search(location.search);
+				}
+			}
+
+			return {
+				getPersonUrl: function (personId) {
+					return getUrl(locationFunctions.getPersonLocation(personId));
+				},
+				setPersonLocation: function (personId) {
+					setLocation(locationFunctions.getPersonLocation(personId));
+				},
+				getCoupleUrl: function (coupleId) {
+					return getUrl(locationFunctions.getCoupleLocation(coupleId));
+				},
+				setCoupleLocation: function (coupleId) {
+					setLocation(locationFunctions.getCoupleLocation(coupleId));
+				},
+				getParentsUrl: function (parentsId) {
+					return getUrl(locationFunctions.getParentsLocation(parentsId));
+				},
+				setParentsLocation: function (parentsId) {
+					setLocation(locationFunctions.getParentsLocation(parentsId));
+				},
+				getTreeUrl: function (personId, spouseId) {
+					return getUrl(locationFunctions.getTreeLocation(personId, spouseId));
+				},
+				setTreeLocation: function (personId) {
+					setLocation(locationFunctions.getTreeLocation(personId));
+				},
+				getFindAddUrl: function (opts) {
+					return getUrl(locationFunctions.getFindAddLocation(opts));
+				},
+				setFindAddLocation: function (opts) {
+					setLocation(locationFunctions.getFindAddLocation(opts));
+				},
+				getSourceBoxUrl: function (opts) {
+					return getUrl(locationFunctions.getSourceBoxLocation(opts));
+				},
+				setSourceBoxLocation: function (opts) {
+					setLocation(locationFunctions.getSourceBoxLocation(opts));
+				}
+			};
+		};
+
+	});
 
 	slApp.config(function ($stateProvider, $urlRouterProvider) {	// configure $state Provider using $urlRouter Provider
 		$urlRouterProvider.otherwise('/');	// Startup Route State is home
@@ -20,22 +159,19 @@
 		/*
 		var url = window.location.href;
 		var loc = url.indexOf('/#');
+		// 'http://localhost:61848' 'http://sourcelinkfs.azurewebsites.net'
 		var redirectUri;
 		if (loc > 0) {
 			redirectUri = url.slice(0, loc);
 		} else {
 			redirectUri = url;
 		}
+		var env = 'production';		// 'beta' 'staging' 'sandbox'
 		*/
 		fsApiProvider
-		.setClientId('a02j0000006na3iAAA')
-		//.setEnvironmentName('sandbox')
-		//.setEnvironmentName('beta')
-		//.setEnvironmentName('staging')
-		.setEnvironmentName('production')
-		.setRedirectUri('http://localhost:61848');
-		//.setRedirectUri('http://sourcelinkfs.azurewebsites.net');
-		//.setRedirectUri(redirectUri);
+			.setClientId('a02j0000006na3iAAA')
+			.setRedirectUri('http://localhost:61848')
+			.setEnvironmentName('production');
 	});
 
 
@@ -48,39 +184,6 @@
 					path: '/person/' + personId
 				};
 			},
-			getCoupleLocation: function (coupleId) {
-				return {
-					prefix: prefix,
-					path: '/couple/' + coupleId
-				};
-			},
-			getParentsLocation: function (parentsId) {
-				return {
-					prefix: prefix,
-					path: '/parents/' + parentsId
-				};
-			},
-			getTreeLocation: function (personId, opts) {
-				return {
-					prefix: prefix,
-					path: '/tree/' + personId,
-					search: opts
-				};
-			},
-			getFindAddLocation: function (opts) {
-				return {
-					prefix: prefix,
-					path: '/find-add',
-					search: opts
-				};
-			},
-			getSourceBoxLocation: function (opts) {
-				return {
-					prefix: prefix,
-					path: '/source-box',
-					search: opts
-				};
-			}
 		});
 	});
 
@@ -94,7 +197,7 @@
 	});
 
 	// $scope is the application object
-	slApp.controller('AppController', function ($scope, fsApi, slInpt, slCSS) {
+	slApp.controller('AppController', function ($scope, slInpt, slCSS) {
 		//$scope.environment = 'Sandbox';
 		//$scope.environment = 'Beta';
 		//$scope.environment = 'Staging';

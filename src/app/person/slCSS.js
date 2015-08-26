@@ -7,7 +7,7 @@
 	};
 
 	var rgbatoRGB = function (rgba) {
-		if (rgba.indexOf('rgba') !== 0) {
+		if (rgba.indexOf('Xrgba') !== 0) {
 			return rgba;
 		}
 		var colors = rgba.substring(rgba.indexOf('(') + 1, rgba.lastIndexOf(')')).split(/,\s*/);
@@ -19,6 +19,7 @@
 			opacityOnWhite(Number(colors[1]),opacity) + ',' +
 			opacityOnWhite(Number(colors[2]), opacity) + ')';
 		return rgb;
+
 	};
 
 	// Store the Style control for sourceLink javasript here
@@ -180,24 +181,24 @@
 
 		slCSS.personColors =  {
 			U: {
-				fill: '#C8C8C8',
+				fill: '#D8D8D8',
 				edge1: '#656565',
 				edge2: '#C5C5C5'
 			},
 			M: {
-				fill: '#B8D8FF',
+				fill: '#C8E8FF',
 				edge1: '#546376',
 				edge2: '#AACBDA'
 			},
 			F: {
-				fill: '#FFCACA',
+				fill: '#FFDADA',
 				edge1: '#74536D',
 				edge2: '#EFBFBF'
 			}
 		};
 
 		slCSS.unattachedSrcsColors = {
-			fill: '#C3BDB1',
+			fill: '#FFEDBD',
 			edge1: '#7F7155',
 			edge2: '#C5A56F'
 		};
@@ -215,8 +216,8 @@
 				stroke: '#00A000'
 			},
 			near: {
-				fill: 'rgba(255, 255, 100, 0.3)',
-				stroke: '#A0A000'
+				fill: 'rgba(255, 255, 0, 0.3)',
+				stroke: '#FBCD00'
 			},
 			no: {
 				fill: 'rgba(255, 180, 180, 0.3)',
