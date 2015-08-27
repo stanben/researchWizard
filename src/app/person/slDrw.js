@@ -247,13 +247,17 @@
 				}
 				if (person && person.sources) {
 					var len = person.sources.length;
-					var attachedAreas = divideAttachedSourceArea(len,attDim);
-					for (var i = 0; i < len; i++) {
-						slSel.pushSR([i.toString, attachedAreas[i]], AttSrc);
-						drawAttachedSource(i,person.sources[i]);
+					if (len > 0) {
+						var attachedAreas = divideAttachedSourceArea(len,attDim);
+						for (var i = 0; i < len; i++) {
+							slSel.pushSR([i.toString, attachedAreas[i]], AttSrc);
+							drawAttachedSource(i,person.sources[i]);
+						}
+					} else {
+						slDrw.drawAttPhrase('There Are No Attached Sources');
 					}
 				} else {
-					slDrw.drawAttPhrase('There Are No Attached Sources');
+					console.log('###ERROR: slDrw.AttSources called when sources are not finished.');
 				}
 			};
 

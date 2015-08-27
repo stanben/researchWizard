@@ -49,22 +49,16 @@
 					http_function: $http,				// $.ajax,
 					deferred_function: $q.defer,		// $.Deferred
 					/*
-										timeout_function: $timeout,
-										save_access_token: true,
-										auto_expire: true,
-										auto_signin: false,
-										expire_callback: function () {
-											$rootScope.$emit('sessionExpired');
-										}
+					timeout_function: $timeout,
+					save_access_token: true,
+					auto_expire: true,
+					auto_signin: false,
+					expire_callback: function () {
+						$rootScope.$emit('sessionExpired');
+					}
 					*/
 				});
 			}
-
-			/*
-						$window.FamilySearch.Person.prototype._isMale = function () {
-							return this.gender && this.gender.type === 'http://gedcomx.org/Male';
-						};
-			*/
 
 			return client;
 		};
@@ -155,23 +149,27 @@
 		$urlRouterProvider.otherwise('/');	// Startup Route State is home
 	});
 
-	slApp.config(function (fsApiProvider) {	// configure fsApi Provider
-		/*
-		var url = window.location.href;
+	var getUri = function (url) {
 		var loc = url.indexOf('/#');
-		// 'http://localhost:61848' 'http://sourcelinkfs.azurewebsites.net'
-		var redirectUri;
 		if (loc > 0) {
-			redirectUri = url.slice(0, loc);
+			return url.slice(0, loc);
 		} else {
-			redirectUri = url;
+			var endchar = url.slice(-1);
+			if (endchar === '/') {
+				return url.slice(0, url.length - 1);
+			}
 		}
+		return url;
+	};
+
+	slApp.config(function (fsApiProvider) {	// configure fsApi Provider
+		// 'http://localhost:61848' 'http://sourcelinkfs.azurewebsites.net'
+		var redirectUri = getUri(window.location.href);
 		var env = 'production';		// 'beta' 'staging' 'sandbox'
-		*/
 		fsApiProvider
 			.setClientId('a02j0000006na3iAAA')
-			.setRedirectUri('http://localhost:61848')
-			.setEnvironmentName('production');
+			.setRedirectUri(redirectUri)
+			.setEnvironmentName(env);
 	});
 
 

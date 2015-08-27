@@ -185,10 +185,12 @@
 				var person = slActv.who();
 				slDrw.background(personId);
 				slDrw.actPerson(personId);
-				slDrw.AttSources(personId);
 				if (person.complete) {
 					slDrw.actRest(person);
 					slSel.startSelection();
+				}
+				if (person.sources) {
+					slDrw.AttSources(personId);
 				}
 			};
 
@@ -202,7 +204,6 @@
 					personId = prsnId;
 					slActv.redraw();
 					slActv.loadExtendedFamily();
-					slActv.drawAttSources();
 				} else {
 					// Loads extended family after completion
 					slActv.loadPerson(prsnId);
@@ -210,11 +211,6 @@
 			};
 
 			slActv.drawAttSources = function () {
-				var person = slPpl.getPerson(personId);
-				if (!person.sourcesClean) {
-//					slSrc.cleanup(person);  what needs cleaned up?
-					person.sourcesClean = true;
-				}
 				slDrw.AttSources(personId);
 			};
 

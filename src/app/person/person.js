@@ -58,7 +58,6 @@
 		$scope.person = person;
 		$scope.slInpt = slInpt;
 		slActv.setPerson(person,personId);
-		slAnlz.deselect();
 
 		var unbindRestored = $rootScope.$on('restored', function () {
 			fsApi.getPerson($scope.person.id).then(function (response) {

@@ -368,14 +368,14 @@
 		};
 
 
-		var installSources = function (personId, sources) {
+		var installSources = function (personId, sources, draw) {
 			var person = slPpl.getPerson(personId);
 			if (person.sources) {
 				alert('installSources to: ' + personId +
 					' when sources already exist.');
 			}
 			person.sources = sources;
-			if (personId === activePersonId) {
+			if (draw && personId === activePersonId) {
 				drawSourcesCB();
 			}
 		};
@@ -388,16 +388,13 @@
 				activePersonId = persId;
 				slSrc.init(installSources,drawAttPhrase);
 			}
+
 			var person = slPpl.getPerson(persId);
 			if (person && person.sources) {
-				if (persId === activePersonId) {
-					drawSourcesCB();
-				}
 				return;
 			}
 			fsApi.getPersonSourcesQuery(persId).then(function (response) {
-				slSrc.personSources(person, response);
-
+				slSrc.personSources(person, response, !!drawSources);
 			});
 		};
 

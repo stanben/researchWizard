@@ -654,7 +654,7 @@
 
 			};
 
-			var addSource = function (srcInfo) {
+			var addSource = function (srcInfo, draw) {
 				srcInfos.push(srcInfo);
 				var fileUrl = srcInfo.description.about;
 				var srcPersonId = extractPersonId(fileUrl);
@@ -676,7 +676,7 @@
 					}
 					var retCnt = incrsourcesReturnedPerPerson(personId);
 					if (retCnt === sourcesRequestedPerPerson.get(personId)) {
-						installSourcesCB(personId, personSources.get(personId));
+						installSourcesCB(personId, personSources.get(personId), draw);
 					}
 				});
 				return true;
@@ -684,7 +684,7 @@
 
 			// Store source responce FSResponce from FamilySearch
 			// for person
-			slSrc.personSources = function (person,FSResponse) {
+			slSrc.personSources = function (person,FSResponse,draw) {
 				var numSources = 0;
 				var sourceRefs = FSResponse.getSourceRefs();
 				var i, len;
@@ -696,7 +696,7 @@
 					if (description.about) {
 						var idx = description.about.indexOf('familysearch.org');
 						if (idx >= 0 && idx <= 20) {
-							if (addSource(srcInfo)) {
+							if (addSource(srcInfo,draw)) {
 								++numSources;
 								continue;
 							}
@@ -709,7 +709,7 @@
 				}
 				
 				if (numSources === 0) {
-					installSourcesCB(person.id);
+					installSourcesCB(person.id,[],draw);
 				} else {	
 					sourcesRequestedPerPerson.set(person.id, numSources);
 				}
