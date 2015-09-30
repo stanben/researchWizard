@@ -189,10 +189,10 @@
 								source.type = pinf[2].toUpperCase();
 							}
 						}
-						if (!source.people) {
-							source.people = new Map();
+						if (!source.attPeople) {
+							source.attPeople = new Map();
 						}
-						source.people.set(srcInfo.persId,psrcPerson);
+						source.attPeople.set(srcInfo.persId,psrcPerson);
 					}
 				}
 			};

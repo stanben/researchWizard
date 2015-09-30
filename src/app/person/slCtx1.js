@@ -182,14 +182,6 @@
 			};
 
 
-			var year = function(date) {
-				if (date && date.length > 2) {
-					return date[2].toString();
-				}
-				return '';
-			};
-
-
 			var reduceGivName = function (givName, needToReduce) {
 				var parts = givName[0].split(' ');
 				var i;
@@ -337,20 +329,6 @@
 				return daymonth.substring(0, startMonth + 3);
 			};
 */
-			var addSimpleDate = function (date, txtA) {
-				var extend = '';
-				if (date[0] > 0) {
-					txtA[0] += date[0];
-					extend = ' ';
-				}
-				if (date[1] > 0) {
-					txtA[0] += extend + slTxt.abbrMonth(date[1] - 1);
-					extend = ' ';
-				}
-				if (date.length > 2) {
-					txtA[0] += extend + date[2];
-				}
-			};
 
 			var addDate = function (prefix, date, txtA) {
 				if (!date) {
@@ -359,17 +337,7 @@
 				// if date is valid then one of the values must be valid
 				
 				txtA[0] += prefix;
-				if (date.to) {
-					// display as range
-					addSimpleDate(date.from, txtA);
-					txtA[0] += '-';
-					addSimpleDate(date.to, txtA);
-				} else if (date.about) {
-					txtA[0] += 'abt';
-					addSimpleDate(date.about, txtA);
-				} else {
-					addSimpleDate(date,txtA);
-				}
+				txtA[0] += slTxt.date(date);
 				txtA[0] += ' ';
 				return true;
 			};
@@ -380,7 +348,13 @@
 			// 2. Shorten words to first 3 characters
 			// 3. Combine first letter of each word into single word
 			var reducePart = function (subPlace, reduceW) {
-				var parts = subPlace.split(' ');
+				var spType = typeof subPlace;
+				var parts;
+				if (spType === 'string') {
+					parts = subPlace.split(' ');
+				} else {
+					parts = subPlace;
+				}
 				var results;
 				subPlace = '';
 				var totalReduced = 0;
@@ -670,7 +644,7 @@
 					locX += mW;
 					locX += slCtx1.concat(textA, ' ');
 				}
-				var yr = year(date);
+				var yr = slTxt.year(date);
 				var yW = slCtx1.concat(textA, yr);
 				if (yW > 0) {
 					if (select) {

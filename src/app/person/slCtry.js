@@ -384,20 +384,39 @@
 			return abbrv;
 		};
 
-		// return [state, country, newPlaceLength] || undefined
+		// return [stateAbreviation, countryAbreviation, newPlaceLength] || undefined
 		slCtry.extractStateCountry = function (place) {
 			if (place) {
 				var plLen = place.length;
 				var state;
 				var country;
-				if (plLen > 0 && !isNaN(place[plLen - 1])) {
-					var cId = place[plLen - 1];
-					country = slCtry.countryAbrv(cId);
-					if (plLen > 1 && !isNaN(place[plLen - 2])) {
-						var sId = place[plLen - 2];
-						state = slCtry.stateAbrv(cId, sId);
+				if (plLen > 0) {
+					var cId = -1;
+					var sId = -1;
+					if (isNaN(place[plLen - 1])) {
+						// try to find country
+						cId = slCtry.countryId(place[plLen - 1]);
+						if (cId >= 0) {
+							if (plLen > 1) {
+								sId = slCtry.stateId(cId, place[plLen - 2]);
+							}
+						}
+					} else {
+						// country number already set
+						cId = place[plLen - 1];
+						if (plLen > 1 && !isNaN(place[plLen - 2])) {
+							sId = place[plLen - 2];
+						}
 					}
-					return [state, country, plLen - 2];
+					if (cId >= 0) {
+						country = slCtry.countryAbrv(cId);
+						--plLen;
+						if (sId >= 0) {
+							state = slCtry.stateAbrv(cId, sId);
+							--plLen;
+						}
+						return [state, country, plLen];
+					}
 				}
 			}
 			return undefined;

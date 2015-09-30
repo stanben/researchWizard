@@ -14,6 +14,34 @@
 				return slPpl.getPerson(personId);
 			};
 
+			// Set and clear busy state
+			slActv.isBusy = function () {
+				angular.element(document.getElementById('navbar-busy')).removeAttr('hidden');
+			};
+
+			slActv.notBusy = function () {
+				angular.element(document.getElementById('navbar-busy')).attr('hidden', true);
+			};
+
+			// Keep track of busy state using a counter
+			var busyCnt = 0;
+			slActv.incrBusy = function () {
+				if (++busyCnt === 1) {
+					slActv.isBusy();
+				}
+			};
+
+			slActv.decrBusy = function () {
+				if (--busyCnt === 0) {
+					slActv.redraw();
+//					slSrc.dumpEval();
+					slActv.notBusy();
+				}
+				if (busyCnt < 0) {
+					alert('busyCnt has gone negetive.');
+				}
+			};
+
 			var getSpouseFamilies = function (pwr) {
 				// first gather all of the couple relationships
 				var families = _.map(pwr.getSpouseRelationships(), function (couple) {
@@ -86,6 +114,7 @@
 
 			var processPersonRelationships = function (primaryId, spouseId, family) {
 				++processFamiliesCount;
+				slActv.incrBusy();
 				fsApi.getPersonWithRelationships(primaryId, { persons: true }).then(function (response) {
 					var couple;
 					if (spouseId) {
@@ -100,6 +129,7 @@
 						slPpl.addParentFamily(personId, family, couple, children);
 					}
 					++returnProcessFamiliesCount;
+					slActv.decrBusy();
 					if (processFamiliesCount === returnProcessFamiliesCount) {
 						slDrw.actRest(slActv.who());
 					}
@@ -145,6 +175,7 @@
 				returnProcessFamiliesCount = 0;
 				var person = slActv.who();
 				if (!person.complete) {
+					slActv.incrBusy();
 					fsApi.getPersonWithRelationships(personId, { persons: true }).then(function (response) {
 						var spouseFamilies = getSpouseFamilies(response);
 						var parentFamilies = getParentFamilies(response);
@@ -155,15 +186,28 @@
 						}
 						slSel.startSelection();
 						person.complete = true;
+						slActv.decrBusy();
 					});
 				}
+			};
+
+			slActv.drawAttSources = function () {
+				slDrw.AttSources(personId);
+			};
+
+
+			var callbacks = {
+				drawSrcs: slActv.drawAttSources,
+				drawAPhr: slDrw.drawAttPhrase,
+				busy: slActv.incrBusy,
+				notBusy: slActv.decrBusy
 			};
 
 			slActv.setPerson = function (personFS,persId) {
 				if (personFS) {
 					personId = persId;
 					slPpl.addPerson(personFS);
-					slPpl.getSources(persId, slActv.drawAttSources, slDrw.drawAttPhrase);
+					slPpl.getSources(persId, callbacks);
 					slActv.redraw();
 					slActv.loadExtendedFamily();
 
@@ -175,9 +219,11 @@
 
 
 			slActv.loadPerson = function (persId) {
+				slActv.incrBusy();
 				fsApi.getPerson(persId).then(function (response) {
 					var personFS = response.getPerson();
-					slActv.setPerson(personFS,persId);
+					slActv.setPerson(personFS, persId);
+					slActv.decrBusy();
 				});
 			};
 
@@ -208,10 +254,6 @@
 					// Loads extended family after completion
 					slActv.loadPerson(prsnId);
 				}
-			};
-
-			slActv.drawAttSources = function () {
-				slDrw.AttSources(personId);
 			};
 
 			return slActv;

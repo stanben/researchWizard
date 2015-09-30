@@ -125,14 +125,6 @@
 				return areas;
 			};
 
-			var attSrcTitle = function (sources) {
-				var first = sources[0];
-				if (sources.length > 1) {
-					return sources.length.toString() + ' ' + first.type + ' Records';
-				}
-				return first.title;
-			};
-
 			var fontSizeToFit = function(phrase,area) {
 				var fontSize = Math.floor(area.d.y / 2);
 				slCtx1.setFontSize(fontSize);
@@ -152,18 +144,6 @@
 				var centerX = area.m.centerX();
 				var lineSpace = textHeight;
 				textY = slCtx1.renderPhrase(phrase, centerX, textY, HWidth, textHeight, lineSpace);
-			};
-
-			var grpToSources = function (sourceGrp) {
-				var sources = [];
-				var len = sourceGrp.length;
-				for (var i = 0; i < len; i++) {
-					var source = slSrc.get(sourceGrp[i]);
-					if (source) {
-						sources.push(source);
-					}
-				}
-				return sources;
 			};
 
 
@@ -196,8 +176,8 @@
 				var centerX = area.m.centerX();
 				var textHeight = slCtx1.setFontSize(slCSS.attSrcTitleFontSize);
 				var lineSpace = textHeight;
-				var sources = grpToSources(sourceGrp);
-				var title = attSrcTitle(sources);
+				var sources = slSrc.grpToSources(sourceGrp);
+				var title = slSrc.title(sources[0], sources.length);
 				textY = slCtx1.renderPhrase(title, centerX, textY, HWidth, textHeight, lineSpace);
 				textHeight = slCtx1.setFontSize(slCSS.attSrcFontSize);
 				slCtx1.setTextStyle('black', 'center');

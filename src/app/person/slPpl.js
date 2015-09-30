@@ -47,8 +47,21 @@
 			if (!event) {
 				return event;
 			}
-			var date = !event.date ? undefined :
-					event.date.slice(0, event.date.length);
+			var date;
+			
+			if (event.date) {
+				var dateType = typeof event.date;
+				if (dateType === 'object') {
+					if (Array.isArray(event.date)) {
+						date = event.date.slice(0, event.date.length);
+					} else {
+						date = {};
+						Object.assign(date);
+					}
+				} else {
+					date = slTxt.splitDate(event.date);
+				}
+			}
 			var place;
 			if (event.place) {
 				place = event.place.slice(0,event.place.length);
@@ -61,7 +74,9 @@
 					place[plast] = cId;
 					if (plast > 0) {
 						var sId = slCtry.stateId(cId, event.place[--plast]);
-						place[plast] = sId;
+						if (sId >= 0) {
+							place[plast] = sId;
+						}
 					}
 				}
 			}
@@ -213,13 +228,15 @@
 			return undefined;
 		};
 
-		var children = function (childrenFS) {
+		var children = function (childrenFS, actvPersonId) {
 			if (childrenFS) {
 				var results = [];
 				for (var i = 0; i < childrenFS.length; i++) {
 					var childId = slPpl.addPerson(childrenFS[i].person);
 					if (childId) {
-						slPpl.getSources(childId);
+						if (childId !== actvPersonId) {
+							slPpl.getSources(childId);
+						}
 						results.push(childId);
 					}
 				}
@@ -274,7 +291,7 @@
 			};
 		};
 
-		var parents = function (familyFS, coupleFS, childrenFS) {
+		var parents = function (actvPersonId, familyFS, coupleFS, childrenFS) {
 			var husbandId;
 			var wifeId;
 			if (familyFS) {
@@ -291,7 +308,7 @@
 				'husband': husbandId,
 				'wife': wifeId,
 				'marriage': marriageEvent(coupleFS),
-				'children': children(childrenFS)
+				'children': children(childrenFS,actvPersonId)
 			};
 		};
 
@@ -334,6 +351,7 @@
 
 
 		slPpl.addSpouseFamily = function (personID, familyFS, coupleFS, childrenFS) {
+			
 			var person = slPpl.getPerson(personID);
 			if (!person.spouses) {
 				person.spouses = [];
@@ -347,7 +365,7 @@
 			if (!person.parents) {
 				person.parents = [];
 			}
-			person.parents.push(parents(familyFS, coupleFS, childrenFS));
+			person.parents.push(parents(personID, familyFS, coupleFS, childrenFS));
 			return person.parents.length - 1;
 		};
 
@@ -373,6 +391,7 @@
 			if (person.sources) {
 				alert('installSources to: ' + personId +
 					' when sources already exist.');
+				return;
 			}
 			person.sources = sources;
 			if (draw && personId === activePersonId) {
@@ -380,21 +399,30 @@
 			}
 		};
 
-
-		slPpl.getSources = function (persId, drawSources, drawAttPhrase) {
-			if (drawSources) {
+		slPpl.getSources = function (persId, callbacks) {
+			if (callbacks) {
 				// Starting new set of sources reset sourcesPerPerson
-				drawSourcesCB = drawSources;
+				drawSourcesCB = callbacks.drawSrcs;
 				activePersonId = persId;
-				slSrc.init(installSources,drawAttPhrase);
+				slSrc.init(installSources,callbacks);
 			}
 
 			var person = slPpl.getPerson(persId);
 			if (person && person.sources) {
 				return;
 			}
+			if (callbacks) {
+				callbacks.busy();
+			}
 			fsApi.getPersonSourcesQuery(persId).then(function (response) {
-				slSrc.personSources(person, response, !!drawSources);
+				if (person && person.sources) {
+					// sources have already been returned for person
+					return;
+				}
+				slSrc.personSources(person, response, !!callbacks);
+				if (callbacks) {
+					callbacks.notBusy();
+				}
 			});
 		};
 

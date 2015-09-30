@@ -28,7 +28,7 @@
 	slApp.controller('PersonController',
 		function ($scope, $state, $rootScope, person, personId, fsApi,
 			slUtl, slCtx1, slCtx2, slDrw, slPpl,
-			slInpt, slActv, slAnlz) {
+			slInpt, slActv) {
 
 		/*
 		var sections = [

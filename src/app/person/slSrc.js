@@ -3,10 +3,10 @@
 	var slApp = angular.module('sourceLink');
 
 	
-
+	//============================================================================================================
 	// Interface to a person's source Information
-	slApp.factory('slSrc', [ '$http', 'slSel', 'slSrcX', 'slTxt', 'slCSS', 'slUtl', 'alert',
-		function (http, slSel, slSrcX, slTxt, slCSS, slUtl, alert) {
+	slApp.factory('slSrc', [ '$http', 'slSel', 'slSrcX', 'slTbl', 'slTxt', 'slCSS', 'slUtl', 'alert',
+		function (http, slSel, slSrcX, slTbl, slTxt, slCSS, slUtl, alert) {
 			
 			var slSrc = {};
 			var sources = new Map();	// map of sources by source.id
@@ -16,8 +16,66 @@
 			var totalSources;
 			var sourcesComplete = 0;
 			var installSourcesCB;
-			var drawAttPhraseCB;
 			var debugLog = false;
+			var busy;
+			var notBusy;
+
+			//============================================================================================================
+			// object that identifies sequence order for sorting people by relation (trying to sequence by age):
+			var relationOrder = {
+				grandfather: 1,
+				grandmother: 2,
+				grandparent: 3,
+				father: 4,
+				mother: 5,
+				parent: 6,
+				fatherinlaw: 7,
+				motherinlaw: 8,
+				uncle: 9,
+				aunt: 10,
+				head: 11,
+				deceased: 11,
+				husband: 12,
+				wife: 13,
+				spouse: 14,
+				brother: 15,
+				sister: 16,
+				sibling: 17,
+				brotherinlaw: 18,
+				sisterinlaw: 19,
+				cousin: 20,
+				son: 21,
+				daughter: 22,
+				child: 23,
+				nephew: 24,
+				niece: 25,
+				grandson: 26,
+				granddaughter: 27,
+				grandchild: 28,
+				other: 29,
+				undefined: 30
+			};
+
+			var getRelationOrder = function (relation) {
+				var val = relationOrder[relation];
+				return val ? val : relationOrder.undefined;
+			};
+
+			//============================================================================================================
+			//  Contents for each source record:
+			//  source.id			--	unique source id which identifies the same source record
+			//  source.title		--  what this source is.
+			//  source.type			--  such as marriage, birth, death, etc.
+			//  source.event		--	date and place of source event
+			//	source.attPeople	--	Map which contains people attached to source using person's record-id as key
+			//  source.people		--	sorted array of all people listed in source (see personCompare)
+			//  -- all entries in the source.attPeople list are also in the source.people list
+			//============================================================================================================
+			//============================================================================================================
+			// Contents for each person record:
+			// person.relation		-- relation to head or principle person of source
+			// 
+			//============================================================================================================
 
 			// sourcesRequestedPerPerson stores a count of every source requested per each person
 			// processed.  This value is only set after all load requests have been performed. 
@@ -25,12 +83,155 @@
 			var sourcesReturnedPerPerson = new Map();  // key is personId; value = [count]
 			var allSourcesReturned = false;
 			
+			var nameToParts = function(name) {
+				if (typeof name === 'string') {
+					return slTxt.splitIntoWords(name);
+				}
+				var parts = [];
+				if (slTxt.isValid(name[0])) {
+					parts = slTxt.splitIntoWords(name[0]);
+				}
+				if (slTxt.isValid(name[1])) {
+					parts = parts.concat(slTxt.splitIntoWords(name[1]));
+				}
+				return parts;
+			};
+
+			// compare strings of s to strings of l
+			// all strings of s must be in l within 1 location
+			var compareShorterToLonger = function(s,l) {
+				var lens = s.length;
+				for (var i = 0; i < lens; i++) {
+					var len = i + 1;
+					var match = false;
+					for (var j = 0; j < len ; j++) {
+						if ((s[i].indexOf(l[j]) === 0) ||
+							(l[j].indexOf(s[i]) === 0)) {
+							match = true;
+							break;
+						}
+					}
+					if (!match) {
+						return false;
+					}
+				}
+				return true;
+			};
+
+			// Entire Names need to either match or 2 names need to match
+			var nameCompare = function (n1, n2) {
+				var parts1 = nameToParts(n1);
+				var parts2 = nameToParts(n2);
+				var len1 = parts1.length;
+				var len2 = parts2.length;
+				if (len1 === len2) {
+					for (var i = 0; i < len1; i++) {
+						if ((parts2[i].indexOf(parts1[i]) !== 0) &&
+								(parts1[i].indexOf(parts2[i]) !== 0)) {
+							return false;
+						}
+					}
+					return true;
+				}
+				if (Math.abs(len1 - len2) > 1) {
+					return false;
+				}
+				if (Math.min(len1, len2) === 1) {
+					return false;
+				}
+				if (len1 > len2) {
+					return compareShorterToLonger(parts2, parts1);
+				}
+				return compareShorterToLonger(parts1,parts2);
+			};
+
+			// return true if p1 and p2 are the same person
+			var samePerson = function(p1,p2) {
+				var diff = 0;
+                                var match;
+				// compare Name
+				if (p1.name && p2.name) {
+					match = nameCompare(p2.name, p1.name);
+					if (!match) {
+						return false;
+					}
+				}
+				// compare age
+				if (p1.birth && p1.birth.date && p2.birth && p2.birth.date) {
+					diff = slTxt.compareDate(p1.birth.date,p2.birth.date);
+				} else if (p1.age && p2.age) {
+					diff = p2.age - p1.age;
+				}
+				if (diff !== 0) {
+					return false;
+				}
+				// sort by id
+				if (p1.id && p2.id) {
+					diff = p1.id.localeCompare(p2.id);
+					if (diff !== 0) {
+						return false;
+					}
+				}
+				return true;
+			};
+
+			// compare two people sorted by relation, age, name, id
+			var personCompare = function (p1, p2) {
+				var diff = 0;
+				// sort by relation
+				if (p1.relation && p2.relation) {
+					diff = getRelationOrder(p1.relation) - getRelationOrder(p2.relation);
+				}
+				if (diff !== 0) {
+					return diff;
+				}
+				// sort by age
+				if (p1.birth && p1.birth.date && p2.birth && p2.birth.date) {
+					diff = slTxt.compareDate(p1.birth.date, p2.birth.date);
+
+				} else if (p1.age && p2.age) {
+					diff = p2.age - p1.age;
+				}
+				if (diff !== 0) {
+					return diff;
+				}
+				// sort by name
+				if (p1.name && p2.name) {
+					diff = nameCompare(p1.name, p2.name);
+					if (diff !== 0) {
+						return diff;
+					}
+				}
+				// sort by id
+				if (p1.id && p2.id) {
+					diff = p1.id.localeCompare(p2.id);
+					if (diff !== 0) {
+						return diff;
+					}
+				}
+
+				/*
+								// sort by sequence number
+								if (p1.seqNum && p2.seqNum) {
+									diff = p2.seqNum - p1.seqNum;
+								}
+								
+				
+				*/
+				return diff;
+			};
+
+			var sortSourcesPeople = function () {
+				sources.forEach(function (source) {
+					source.people.sort(personCompare);
+				}, sources);
+			};
 
 			slSrc.get = function(srcId) {
 				return sources.get(srcId);
 			};
 
-			var doNotGroup = ['CENSUS'];
+			var doNotGroup = ['CENSUS','VITAL','MISCELLANEOUS'];
 
 			var sameGroupType = function (src1, src2) {
 				if (src1.type === src2.type) {
@@ -53,8 +254,8 @@
 					}
 				}
 				var notSame = false;
-				src1.people.forEach( function(person1,key) {
-					var person2 = src2.people.get(key);
+				src1.attPeople.forEach( function(person1,key) {
+					var person2 = src2.attPeople.get(key);
 					if (person2 && person2.relationshipToHead !== person1.relationshipToHead) {
 						notSame = true;
 					}
@@ -81,6 +282,20 @@
 				return dateDiff;
 			};
 
+			// given a sourceGrp -- array of sourceIds
+			// return array of corresponding sources
+			slSrc.grpToSources = function (sourceGrp) {
+				var sources = [];
+				var len = sourceGrp.length;
+				for (var i = 0; i < len; i++) {
+					var source = slSrc.get(sourceGrp[i]);
+					if (source) {
+						sources.push(source);
+					}
+				}
+				return sources;
+			};
+
 			//==============================================================
 			// a Map of personId, sources managed by addSourceToPerson
 			var personSources;		
@@ -105,6 +320,14 @@
 					var nextSource = slSrc.get(sources[loc][0]);
 					var fit = sourceSlot(source, nextSource);
 					if (fit === 0) {
+						// make sure this source isn't already in the group list
+						var glen = sources[loc].length;
+						for (var i = 0; i < glen; i++) {
+							var grpSrcId = sources[loc][i];
+							if (grpSrcId === sourceId) {
+								return;
+							}
+						}
 						// place in same group
 						sources[loc].push(sourceId);
 						return;
@@ -200,14 +423,68 @@
 				return undefined;
 			};
 
+			var personTypeFields = {
+				age: 'age',
+				relationshipToHead: 'relation',
+			};
+
 			var typeFields = {
-				AGE: 'age',
-				RELATIONSHIP_TO_HEAD: 'relation',
-				LANGUAGE: 'language'
+				language: 'language'
 			};
 
 			var descrFields = {
-				SOURCE_NEWSPAPER: 'newspaper'
+				sourceNewspaper: 'newspaper'
+			};
+
+			var setGender = function (gender) {
+				var rslt = gender.charAt(0);
+				if (rslt === 'u' || rslt === 'U') {
+					return undefined;
+				}
+				return rslt;
+			};
+
+			var personSkipProps = ['gender', 'characteristic', 'note', 'sourceCitation', 'census'];
+
+			var getOtherRelation = function (info) {
+				console.log(info.crash);
+			};
+
+			var spouseRecords = ['marriage', 'census'];
+
+			var spouseRelation = function (gender, sourceType) {
+				if (spouseRecords.indexOf(sourceType.toLowerCase()) >= 0) {
+					return (gender === 'M') ? 'husband' :
+						(gender === 'F') ? 'wife' : 'spouse';
+				}
+				return (gender === 'M') ? 'father' :
+						(gender === 'F') ? 'mother' : 'parent';
+				
+			};
+
+			var addPerson = function (srcInfo, person, gender, relation) {
+				var newPerson = {};
+				if (gender) {
+					newPerson.gender = gender;
+				}
+				if (relation) {
+					newPerson.relation = relation;
+				}
+				var propsAdded = 0;
+				for (var prop in person) {
+					if (person.hasOwnProperty(prop)) {
+						if (personSkipProps.indexOf(prop) >= 0) {
+							continue;
+						}
+						if (!newPerson[prop]) {
+							slUtl.setProp(newPerson, prop, person[prop]);
+							++propsAdded;
+						}
+					}
+				}
+				if (propsAdded > 0) {
+					addPersonToSource(srcInfo, newPerson);
+				}
 			};
 
 			var setOtherSourceInfo = function (srcInfo) {
@@ -224,7 +501,7 @@
 							var part = normalized.parts[0];
 							if (part.fieldId === 'EVENT_CEMETERY' &&
 								part.text) {
-								source['cemetery'] = part.text;
+								slUtl.setProp(source, 'cemetery', part.text);
 							}
 						}
 					}
@@ -235,27 +512,161 @@
 					for (i = 0; i < len; i++) {
 						var chrstc = data.characteristic[i];
 						if (chrstc.type) {
-							if (chrstc.type === 'OTHER') {
+							var type = slTxt.toCamelCase(chrstc.type);
+							if (type === 'other') {
 								if (chrstc.description) {
-									prop = descrFields[chrstc.description];
+									var descr = slTxt.toCamelCase(chrstc.description);
+									prop = descrFields[descr];
 									if (prop) {
 										txt = normzdOrignl(chrstc);
 										if (txt) {
-											source[prop] = txt;
+											slUtl.setProp(source, prop, txt);
 										}
 									}
 								}
 							} else {
-								prop = typeFields[chrstc.type];
+								prop = typeFields[type];
 								if (prop) {
 									txt = normzdOrignl(chrstc);
 									if (txt) {
-										source[prop] = txt;
+										source[prop] = txt.toLowerCase();
+										slUtl.setProp(source, prop, txt);
+									}
+								}
+								prop = personTypeFields[type];
+								if (prop) {
+									txt = normzdOrignl(chrstc).toLowerCase();
+									if (txt) {
+										slUtl.setProp(srcInfo.thisPerson, prop, txt);
 									}
 								}
 							}
 						}
 					}
+				}
+				var relation;
+				var person;
+				var gender;
+				if (data.child) {
+					len = data.child.length;
+					for (i = 0; i < len; i++) {
+						person = data.child[i];
+						gender = setGender(person.gender);
+						relation = gender === 'M' ? 'son' :
+							(gender === 'F' ? 'daughter' : 'child');
+						addPerson(srcInfo, person, gender, relation);
+					}
+				}
+				if (data.parent) {
+					len = data.parent.length;
+					for (i = 0; i < len; i++) {
+						person = data.parent[i];
+						gender = setGender(person.gender);
+						relation = gender === 'M' ? 'father' :
+							(gender === 'F' ? 'mother' : 'parent');
+						addPerson(srcInfo, person, gender, relation);
+					}
+				}
+				if (data.spouse) {
+					len = data.spouse.length;
+					for (i = 0; i < len; i++) {
+						person = data.spouse[i];
+						gender = setGender(person.gender);
+						relation = spouseRelation(gender, srcInfo.source.type);
+						addPerson(srcInfo, person, gender, relation);
+					}
+				}
+				if (data.otherRelative) {
+					len = data.otherRelative.length;
+					for (i = 0; i < len; i++) {
+						person = data.otherRelative[i];
+						gender = setGender(person.gender);
+						relation = getOtherRelation(data.otherRelative[i]);
+						addPerson(srcInfo, person, gender, relation);
+					}
+				}
+			};
+
+			//==================================================================================
+			//==================================================================================
+			// evaluation software to see if any of these source Id's really work
+			var srcIdEval = {
+				total: 0
+			};
+			var evaluateSourceIds = function (srcInfo, Id) {
+				++srcIdEval.total;
+				var title = getSourceTitle(srcInfo.data);
+				for (var prop in Id) {
+					if (Id.hasOwnProperty(prop)) {
+						if (!srcIdEval[prop]) {
+							srcIdEval[prop] = new Map();
+							srcIdEval[prop].set(Id[prop],[[title, [srcInfo.thisPerson.id]]]);
+						} else {
+							var thisEval = srcIdEval[prop];
+							var foundId = thisEval.get(Id[prop]);
+							if (foundId) {
+								var len = foundId.length;
+								var foundTitle = false;
+								for (var i = 0; i < len; i++) {
+									if (foundId[i][0] === title) {
+										foundTitle = true;
+										foundId[i][1].push(srcInfo.thisPerson.id);
+										break;
+									}
+								}
+								if (!foundTitle) {
+									foundId.push([title, [srcInfo.thisPerson.id]]);
+								}
+							} else {
+								thisEval.set(Id[prop], [[title, [srcInfo.thisPerson.id]]]);
+							}
+						}
+					}
+				}
+			};
+
+			var evaluateIds = function(total, srcEval, results) {
+				var entItr = srcEval.entries();
+				results.totUniqSrcs = 0;
+				results.total = 0;
+				for (;;) {
+					var entry = entItr.next().value;
+					if (entry) {
+						var len = entry[1].length;
+						if (len > 1) {
+							if (!results.ERROR_SAME_ID) {
+								results.ERROR_SAME_ID = 0;
+							}
+							results.ERROR_SAME_ID += len - 1;
+						}
+						results.totUniqSrcs += len;
+						for (var i = 0; i < len; i++) {
+							results.total += entry[1][i][1].length;
+						}
+					} else {
+						break;
+					}
+				}
+				if (results.total < total) {
+					results.MISSING = total - results.total;
+				}
+			};
+
+			slSrc.dumpEval = function () {
+				if (srcIdEval.total > 0) {
+					var results  = {
+						total: srcIdEval.total
+					};
+					for (var prop in srcIdEval) {
+						if (srcIdEval.hasOwnProperty(prop)) {
+							if (prop === 'total') {
+								continue;
+							}
+							results[prop] = {};
+							evaluateIds(srcIdEval.total, srcIdEval[prop], results[prop]);
+						}
+					}
+					slTxt.pprint('EvaluateIds: ', results);
 				}
 			};
 
@@ -266,39 +677,47 @@
 				if (data.metadata && data.metadata.externalId && data.metadata.externalId.length > 0) {
 					rslt = slTxt.pathEnd(data.metadata.externalId[0].value);
 					if (rslt) {
-						Id['externalId'] = rslt;
+						Id['1data_metadata_externalId_0'] = rslt;
 					}
 				}
 				if (data.identifier) {
 					rslt = slTxt.pathEnd(data.identifier.value);
 					if (rslt) {
-						Id['identifier'] = rslt;
+						Id['2data_identifier'] = rslt;
 					}
-				} else if (data.metadata && data.metadata.sources &&
-								data.metadata.sources.length > 0 &&
-								data.metadata.sources[0].indentifier) {
+				}
+				if (data.metadata && data.metadata.sources &&
+					data.metadata.sources.length > 0 &&
+					data.metadata.sources[0].indentifier) {
 					rslt = slTxt.pathEnd(data.metadata.sources[0].indentifier.value);
 					if (rslt) {
-						Id['identifier'] = rslt;
+						Id['3data_metadata_sources_0_indentifier'] = rslt;
 					}
 				}
 				if (data.isPartOf && data.isPartOf.isPartOf &&
 					data.isPartOf.isPartOf.isPartOf) {
 					rslt = slTxt.pathEnd(data.isPartOf.isPartOf.isPartOf.identifier.value);
 					if (rslt) {
-						Id['isPartOf'] = rslt;
+						Id['4data_isPartOf_isPartOf_isPartOf'] = rslt;
 					}
-				} else if (data.metadata && data.metadata.isPartOf && data.metadata.isPartOf.isPartOf &&
+				}
+				if (data.metadata && data.metadata.isPartOf && data.metadata.isPartOf.isPartOf &&
 						data.metadata.isPartOf.isPartOf.isPartOf) {
 					rslt = slTxt.pathEnd(data.metadata.isPartOf.isPartOf.isPartOf.identifier.value);
 					if (rslt) {
-						Id['isPartOf'] = rslt;
+						if (slUtl.isEmpty(Id)) {
+							console.log('sourceId from isPartOf for ' + getSourceTitle(srcInfo.data) + '=' + rslt);
+						}
+						if (rslt.length < 10) {
+							rslt += srcInfo.thisPerson.id;
+						}
+						Id['5data_metadata_isPartOf_isPartOf_isPartOf'] = rslt;
 					}
 				}
 				if (slUtl.isEmpty(Id)) {
-					Id['created'] = 'sourceLink' + (++createdCnt);
+					Id['6created'] = 'sourceLink' + (++createdCnt);
 				}
-				
+				evaluateSourceIds(srcInfo, Id);
 				// return the first one...
 				for (var prop in Id) {
 					if (Id.hasOwnProperty(prop)) {
@@ -406,13 +825,6 @@
 				}
 			};
 
-			var setGender = function (gender) {
-				var rslt = gender.charAt(0);
-				if (rslt === 'u' || rslt === 'U') {
-					return undefined;
-				}
-				return rslt;
-			};
 
 			var getGender = function (data) {
 				if (data.gender && data.gender.length > 0) {
@@ -442,7 +854,7 @@
 						if (date || place) {
 							var event = slTxt.event(date, place);
 							if (event) {
-								person[type] = event;
+								slUtl.setProp(person, type, event);
 							}
 						}
 					}
@@ -467,8 +879,8 @@
 			};
 
 
-			var fieldId = ['PR_FTHR_', ];
-			var relation = ['Father'];
+			var fieldId = ['PR_FTHR_', 'PR_MTHR', 'GR_FTHR', 'GR_MTHR', 'SPOUSE'];
+			var relation = ['father', 'mother', 'father', 'mother', 'spouse'];
 
 			var relationFromFieldId = function (fid) {
 				var len = fieldId.length;
@@ -516,7 +928,7 @@
 					person['name'] = [givenName, surName];
 				}
 				if (nameRelation) {
-					person['relation'] = nameRelation;
+					slUtl.setProp(person, 'relation', nameRelation.toLowerCase());
 				}
 			};
 
@@ -542,32 +954,82 @@
 								continue;
 							}
 						}
-						var text = normzdOrignl(chartic);
-						if (text) {
-							person[type] = text;
+						var prop = personTypeFields[type];
+						if (prop) {
+							var txt = normzdOrignl(chartic).toLowerCase();
+							if (txt) {
+								slUtl.setProp(person, prop, txt);
+							}
 						}
 					}
 				}
 			};
 
-			var addPersonToSource = function (srcInfo, data) {
-				var person = {
-					pid: srcInfo.persId		// personId of famTree
-				};
-				addPersonFields(person,data);
+			var findPerson = function (people, person) {
+				var len = people.length;
+				for (var i = 0; i < len; i++) {
+					if (samePerson(people[i], person)) {
+						return i;
+					}
+				}
+				return -1;
+			};
+
+			var addPersonData = function (person, data) {
+				addPersonFields(person, data);
 				var gender = getGender(data);
 				if (gender) {
 					person.gender = gender;
 				}
-				if (debugLog) {
-					var name = person.name ? (person.name[0] + ' ' + person.name[1]) : 'undefined name';
-					console.log('addPersonToSource: ' + name);
+			};
+
+			var addMorePersonInfo = function (person) {
+				if (!person.added && person.url) {
+					busy();
+					http.get(person.url).then(function (response) {
+						var data = response.data;
+						addPersonData(person, data);
+						notBusy();
+					});
+					delete person.url;
+					person.added = true;
 				}
+			};
+
+
+			var addPersonToSource = function (srcInfo, thisPerson) {
 				var source = srcInfo.source;
-				if (!source.people) {
-					source.people = new Map();
+				var person;
+				var fidx = findPerson(source.people, thisPerson);
+                                var addAttPerson = thisPerson.id ? true : false;
+				if (fidx >= 0) {
+					person = source.people[fidx];
+                                        if (person.id) {
+                                            addAttPerson = false;
+                                        }
+					slUtl.merge(person, thisPerson);
+				} else {
+					source.people.push(thisPerson);
+					person = thisPerson;
 				}
-				source.people.set(person.pid,person);
+				if (addAttPerson) {
+					if (!source.attPeople) {
+						source.attPeople = new Map();
+					}
+					source.attPeople.set(person.id, person);
+				} else {
+					addMorePersonInfo(person);
+				}
+			};
+
+			var addPersonDataToSource = function (srcInfo, data) {
+				var thisPerson = srcInfo.thisPerson;
+				addPersonData(thisPerson,data);
+				if (debugLog) {
+					var name = thisPerson.name ? (thisPerson.name[0] + ' ' + thisPerson.name[1]) : 'undefined name';
+					console.log('addPersonDataToSource: ' + srcInfo.source.id + ' ' + name);
+				}
+				addPersonToSource(srcInfo, thisPerson);
 			};
 
 
@@ -589,10 +1051,15 @@
 
 			var createSource = function(srcInfo,sourceId) {
 				var title = getSourceTitle(srcInfo.data);
+//				if (/*srcInfo.thisPerson.id === 'LF16-TYS' &&*/ title.indexOf('Census') >= 0 &&
+//					title.indexOf('1940') >= 0) {
+//					slTxt.pprint(title, srcInfo);
+//				}
 				if (title) {
 					var source = {
 						title: title,
 						id: sourceId,
+						people: []
 					};
 					getEventInfo(srcInfo, source);
 					srcInfo.source = source;
@@ -609,32 +1076,31 @@
 				}
 			};
 
-
 			// Create or load  a source attached to the person.
-			// whose record ID is srcInfo.persId.
+			// whose record ID is srcInfo.thisPerson.id.
 			var loadSource = function (srcInfo) {
 				var data = srcInfo.data;
 				var sourceId = getSourceId(srcInfo);
+//				if (sourceId === '1202535') {
+//					slTxt.pprint(srcInfo.description.titles[0].value, srcInfo);
+//				}
 				if (sourceId) {
 					var source = slSrc.getSource(sourceId);
 					if (!source) {
-						if (debugLog) {
-							console.log('createSource: ' + sourceId);
-						}
-						createSource(srcInfo,sourceId);
+						createSource(srcInfo, sourceId);
 						if (!srcInfo.source) {
 							alert('###ERROR: failed to create source');
 							return;
 						}
-						setOtherSourceInfo(srcInfo);
 					} else {
 						srcInfo.source = source;
 					}
 					if (debugLog) {
-						console.log(srcInfo.source.type + ': ' + srcInfo.source.title);
+						console.log(sourceId + ' ' + srcInfo.source.type + ': ' + srcInfo.source.title);
 					}
-					addPersonToSource(srcInfo, data);
-					addSourceToPerson(srcInfo.persId, sourceId);
+					addPersonDataToSource(srcInfo, data);
+					setOtherSourceInfo(srcInfo);
+					addSourceToPerson(srcInfo.thisPerson.id, sourceId);
 				} else {
 					alert('###ERROR: sourceId undefined');
 				}
@@ -646,41 +1112,78 @@
 
 			var extractPersonId = function (txt) {
 				var pid = slTxt.pathEnd(txt);
-				var loc = pid.indexOf('-');
-				if (loc !== 4) {
-					return undefined;
+				pid = /[A-Z0-9]*-[A-Z0-9]*/.exec(pid);
+				if (pid && pid.length === 1 && pid[0].length >= 8) {
+					return pid[0];
 				}
-				return pid.slice(0, 8);
-
+				return undefined;
 			};
+
 
 			var addSource = function (srcInfo, draw) {
 				srcInfos.push(srcInfo);
 				var fileUrl = srcInfo.description.about;
+			//	slTxt.pprint(fileUrl, srcInfo.description);
 				var srcPersonId = extractPersonId(fileUrl);
 				if (!srcPersonId) {
 					// Appears this source person is not directly tied to the active person 
+					console.log(srcInfo.thisPerson.id + ' is not tied to source');
 					return false;
 				}
-				var personId = srcInfo.persId;
+				var personId = srcInfo.thisPerson.id;
 				if (debugLog) {
 					console.log('===========================================================================');
 					console.log('addSource: personId=' + personId + ' srcPersonId=' + srcPersonId);
 				}
-				http.get(fileUrl).success(function (data, status) {
-					if (data && status === 200) {
-						srcInfo.data = data;
+				busy();
+				http.get(fileUrl).then(function (response) {
+					if (response.data && response.status === 200) {
+			//			slTxt.pprint(fileUrl, response);
+						srcInfo.data = response.data;
 						loadSource(srcInfo);
 					} else {
-						alert('File ' + fileUrl + ' load status = ' + status);
+						alert('File ' + fileUrl + ' load status = ' + response.status);
 					}
 					var retCnt = incrsourcesReturnedPerPerson(personId);
 					if (retCnt === sourcesRequestedPerPerson.get(personId)) {
-						installSourcesCB(personId, personSources.get(personId), draw);
+						sortSourcesPeople();
+						var srcs = personSources.get(personId);
+						installSourcesCB(personId, srcs, draw);
 					}
+					notBusy();
 				});
 				return true;
 			};
+
+			slSrc.spouseFamilySources = function (person, FSResponse) {
+				var descriptions = FSResponse.getSourceDescriptions();
+				if (descriptions.length > 0) {
+					slTxt.pprint(person.id + ' spouseFamilySources', descriptions);
+				}
+			};
+
+			slSrc.spouseCoupleSources = function (person, FSResponse) {
+				var descriptions = FSResponse.getSourceDescriptions();
+				if (descriptions.length > 0) {
+					slTxt.pprint(person.id + ' spouseCoupleSources', descriptions);
+				}
+			};
+
+			slSrc.parentFamilySources = function (person, FSResponse) {
+				var descriptions = FSResponse.getSourceDescriptions();
+				if (descriptions.length > 0) {
+					slTxt.pprint(person.id + ' parentFamilySources', descriptions);
+				}
+			};
+
+			slSrc.parentCoupleSources = function (person, FSResponse) {
+				var descriptions = FSResponse.getSourceDescriptions();
+				if (descriptions.length > 0) {
+					slTxt.pprint(person.id + ' parentCoupleSources', descriptions);
+				}
+			};
+
+
 
 			// Store source responce FSResponce from FamilySearch
 			// for person
@@ -692,7 +1195,7 @@
 				for (i = 0; i < len; i++) {
 					var sourceRef = sourceRefs[i];
 					var description = FSResponse.getSourceDescription(sourceRef.$sourceDescriptionId);
-					var srcInfo = slSrc.info(person.id, sourceRef, description);
+					var srcInfo = slSrc.info(person.id, description, sourceRef);
 					if (description.about) {
 						var idx = description.about.indexOf('familysearch.org');
 						if (idx >= 0 && idx <= 20) {
@@ -716,12 +1219,15 @@
 			};
 
 
-			slSrc.info = function(persId, sourceRef, description) {
+
+			slSrc.info = function(persId, description, sourceRef) {
 				
 				//construct srcInfo data structure
 				return {
 					seqNum: ++sequenceNumber,
-					persId: persId,				// personId of person source is attached to
+					thisPerson: {				// person source is attached to
+						id: persId
+					},
 					sourceRef: sourceRef,
 					description: description,
 					data: undefined,
@@ -731,22 +1237,26 @@
 				};
 			};
 
+			slSrc.title = function (source, length) {
+				if (length > 1) {
+					return length.toString() + ' ' + source.type + ' Records';
+				}
+				return slTxt.stripTitle(source.title);
+			};
+
 			slSrc.getSource = function(sourceId) {
 				return sourceId ? sources.get(sourceId) : undefined;
 			};
 
 			slSrc.select = function (person, which) {
 				var srcGrp = person.sources[which];
-				var len = srcGrp.length;
-				for (var i = 0; i < len; i++) {
-					var source = slSrc.get(srcGrp[i]);
-					slTxt.pprint(source.title,source);
-				}
+				slTbl.sourceGrp(person, srcGrp, slSrc);
 			};
 
-			slSrc.init = function (installSources, drawAttPhr) {
+			slSrc.init = function (installSources, callbacks) {
 				installSourcesCB = installSources;
-				drawAttPhraseCB = drawAttPhr;
+				busy = callbacks.busy;
+				notBusy = callbacks.notBusy;
 				if (sourcesRequestedPerPerson) {
 					sourcesRequestedPerPerson.clear();
 					sourcesRequestedPerPerson = undefined;
@@ -785,8 +1295,8 @@
 										addAttSel(i, rslt[1], rslt[0]);
 									}
 								}
-								if (!rslt && source.people) {
-									var srcPerson = source.people.get(refPerson.id);
+								if (!rslt && source.attPeople) {
+									var srcPerson = source.attPeople.get(refPerson.id);
 									if (srcPerson) {
 										var srcPersVal = srcPerson[selectInfo.compare.prop];
 										rslt = selectInfo.compare.compareFunc(selectInfo.compare.event, srcPersVal);

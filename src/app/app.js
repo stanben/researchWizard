@@ -195,11 +195,11 @@
 	});
 
 	// $scope is the application object
-	slApp.controller('AppController', function ($scope, slInpt, slCSS) {
+	slApp.controller('AppController', function ($scope, slInpt, slActv, slCSS) {
+		slCSS.init();
 		//$scope.environment = 'Sandbox';
 		//$scope.environment = 'Beta';
 		//$scope.environment = 'Staging';
-		slCSS.init();
 		$scope.environment = 'Production';
 		$scope.changeID = slInpt.changeID;
 		$scope.viewInFS = slInpt.viewInFS;
@@ -208,14 +208,14 @@
 
 		$scope.$on('$stateChangeStart', function (event, toState) {	// listen for $stateChangeStart event
 			if (toState.resolve) {
-				$scope.busy = true;
+				slActv.isBusy(); // $scope.busy = true;
 			}
 		});
 		$scope.$on('$stateChangeSuccess', function () {	// listen for $stateChangeSuccess event
-			$scope.busy = false;
+			slActv.notBusy(); // $scope.busy = false;
 		});
 		$scope.$on('$stateChangeError', function () {	// listen for $stateChangeError event
-			$scope.busy = false;
+			slActv.notBusy(); // $scope.busy = false;
 		});
 
 	});

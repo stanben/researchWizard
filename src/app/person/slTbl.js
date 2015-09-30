@@ -4,10 +4,8 @@
 
 	// Create Table to view source information chronologically from 
 	// top to bottom.
-	slApp.factory('slTbl', [ 'slSrc', function (slSrc) {
+	slApp.factory('slTbl', [ 'slTxt', function (slTxt) {
 		var slTbl = {};
-
-		
 
 
 		// These "util" functions are not part of the core
@@ -15,37 +13,37 @@
 
 		var util = {
 
-			el: function (type, attrs) {
+			elmnt: function (type, attrs) {
 
 				// Create new element
-				var el = document.createElement(type), attr;
+				var elmnt = document.createElement(type), attr;
 
 				// Copy to single object
 				attrs = util.merge({}, attrs);
 
-				// Add attributes to el
+				// Add attributes to elmnt
 				if (attrs && attrs.style) {
 					var styles = attrs.style;
-					util.applyCSS(el, styles);
+					util.applyCSS(elmnt, styles);
 					delete attrs.style;
 				}
 				for (attr in attrs) {
 					if (attrs.hasOwnProperty(attr)) {
-						el[attr] = attrs[attr];
+						elmnt[attr] = attrs[attr];
 					}
 				}
 
-				return el;
+				return elmnt;
 
 			},
 
-			applyCSS: function (el, styles) {
+			applyCSS: function (elmnt, styles) {
 				// Applies CSS to a single element 
 				for (var prop in styles) {
 					if (styles.hasOwnProperty(prop)) {
 						try {
 							// Yes, IE6 SUCKS! 
-							el.style[prop] = styles[prop];
+							elmnt.style[prop] = styles[prop];
 						} catch (e) { }
 					}
 				}
@@ -56,29 +54,29 @@
 				return document.createTextNode(t);
 			},
 
-			row: function (cells, type, cellType) {
+			row: function (cells, cellType) {
 
 				// Creates new <tr> 
 				cellType = cellType || 'td';
 
 				// colSpan is calculated by length of null items in array 
 				var colSpan = util.count(cells, null) + 1,
-					tr = util.el('tr'), td,
+					tr = util.elmnt('tr'), td,
 					attrs = {
-						style: util.getStyles(cellType, type),
+						style: util.getStyles(cellType),
 						colSpan: colSpan,
 						onmouseover: function () {
 							var tds = this.parentNode.childNodes;
 							util.forEach(tds, function (cell) {
 								if (cell.nodeName.toLowerCase() !== 'td') { return; }
-								util.applyCSS(cell, util.getStyles('tdHover', type));
+								util.applyCSS(cell, util.getStyles('tdHover'));
 							});
 						},
 						onmouseout: function () {
 							var tds = this.parentNode.childNodes;
 							util.forEach(tds, function (cell) {
 								if (cell.nodeName.toLowerCase() !== 'td') { return; }
-								util.applyCSS(cell, util.getStyles('td', type));
+								util.applyCSS(cell, util.getStyles('td'));
 							});
 						}
 					};
@@ -87,7 +85,7 @@
 
 					if (cell === null) { return; }
 					// Default cell type is <td> 
-					td = util.el(cellType, attrs);
+					td = util.elmnt(cellType, attrs);
 
 					if (cell.nodeType) {
 						// IsDomElement 
@@ -101,53 +99,6 @@
 				});
 
 				return tr;
-			},
-
-			hRow: function (cells, type) {
-				// Return new <th> 
-				return util.row(cells, type, 'th');
-			},
-
-			table: function (headings, type) {
-
-				headings = headings || [];
-
-				// Creates new table: 
-				var attrs = {
-					thead: {
-						style: util.getStyles('thead', type)
-					},
-					tbody: {
-						style: util.getStyles('tbody', type)
-					},
-					table: {
-						style: util.getStyles('table', type)
-					}
-				},
-					tbl = util.el('table', attrs.table),
-					thead = util.el('thead', attrs.thead),
-					tbody = util.el('tbody', attrs.tbody);
-
-				if (headings.length) {
-					tbl.appendChild(thead);
-					thead.appendChild(util.hRow(headings, type));
-				}
-				tbl.appendChild(tbody);
-
-				return {
-					// Facade for dealing with table/tbody
-					// Actual table node is this.node: 
-					node: tbl,
-					tbody: tbody,
-					thead: thead,
-					appendChild: function (node) {
-						this.tbody.appendChild(node);
-					},
-					addRow: function (cells, _type, cellType) {
-						this.appendChild(util.row.call(util, cells, (_type || type), cellType));
-						return this;
-					}
-				};
 			},
 
 			// Don't shorten allow to wrap
@@ -228,34 +179,6 @@
 				return true;
 			},
 
-			type: function (v) {
-				try {
-					// Returns type, e.g. "string", "number", "array" etc.
-					//   Note, this is only used for precise typing. 
-					if (v === null) { return 'null'; }
-					if (v === undefined) { return 'undefined'; }
-					var oType = Object.prototype.toString.call(v).match(/\s(.+?)\]/)[1].toLowerCase();
-					if (v.nodeType) {
-						if (v.nodeType === 1) {
-							return 'domelement';
-						}
-						return 'domnode';
-					}
-					if (/^(string|number|array|regexp|function|date|boolean)$/.test(oType)) {
-						return oType;
-					}
-					if (typeof v === 'object') {
-						return v.jquery && typeof v.jquery === 'string' ? 'jquery' : 'object';
-					}
-					if (v === window || v === document) {
-						return 'object';
-					}
-					return 'default';
-				} catch (e) {
-					return 'default';
-				}
-			},
-
 			within: function (ref) {
 				// Check existence of a val within an object
 				//   RETURNS KEY 
@@ -271,42 +194,12 @@
 				};
 			},
 
-			common: {
-				circRef: function (obj, key) {
-					return util.expander(
-						'[POINTS BACK TO <strong>' + (key) + '</strong>]',
-						'Click to show this item anyway',
-						function () {
-							this.parentNode.appendChild(slTbl.viewSrcs(obj, { maxDepth: 1 }));
-						}
-					);
-				},
-				depthReached: function (obj) {
-					return util.expander(
-						'[DEPTH REACHED]',
-						'Click to show this item anyway',
-						function () {
-							try {
-								this.parentNode.appendChild(slTbl.viewSrcs(obj, { maxDepth: 1 }));
-							} catch (e) {
-								this.parentNode.appendChild(
-									util.table(['ERROR OCCURED DURING OBJECT RETRIEVAL'], 'error').addRow([e.message]).node
-								);
-							}
-						}
-					);
-				}
-			},
-
-			getStyles: function (el, type) {
-				type = prettyPrintThis.settings.styles[type] || {};
-				return util.merge(
-					{}, prettyPrintThis.settings.styles['default'][el], type[el]
-				);
+			getStyles: function (elmnt) {
+				return mySettings.styles[elmnt];
 			},
 
 			expander: function (text, title, clickFn) {
-				return util.el('a', {
+				return util.elmnt('a', {
 					innerHTML: util.shorten(text) + ' <b style="visibility:hidden;">[+]</b>',
 					title: title,
 					onmouseover: function () {
@@ -326,41 +219,7 @@
 				});
 			},
 
-			stringify: function (obj) {
-
-				// Bit of an ugly duckling!
-				//   - This fn returns an ATTEMPT at converting an object/array/anyType
-				//   into a string, kinda like a JSON-deParser
-				//  - This is used for when |settings.expanded === false| 
-
-				var type = util.type(obj),
-					str, first = true;
-				if (type === 'array') {
-					str = '[';
-					util.forEach(obj, function (item, i) {
-						str += (i === 0 ? '' : ', ') + util.stringify(item);
-					});
-					return str + ']';
-				}
-				if (typeof obj === 'object') {
-					str = '{';
-					for (var i in obj) {
-						if (obj.hasOwnProperty(i)) {
-							str += (first ? '' : ', ') + i + ':' + util.stringify(obj[i]);
-							first = false;
-						}
-					}
-					return str + '}';
-				}
-				if (type === 'regexp') {
-					return '/' + obj.source + '/';
-				}
-				if (type === 'string') {
-					return '"' + obj.replace(/"/g, '\\"') + '"';
-				}
-				return obj.toString();
-			},
-
+			
 			headerGradient: (function () {
 
 				var canvas = document.createElement('canvas');
@@ -387,377 +246,569 @@
 
 		// All items can be overwridden by passing an
 		//   "options" object when calling viewSrcs 
-		var prettyPrintThis = {
-			config: {
+		var mySettings = {
+			
+			styles: {
+				table: {
+					borderCollapse: 'collapse',
+					whiteSpace: 'pre-line',
+					width: '100%'
+				},
+				td: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#FFF',
+					color: '#222',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line'
+				},
+				tdS: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#EFE',
+					color: '#121',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line'
+				},
+				tdL: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#EEF',
+					color: '#112',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line'
+				},
+				tdA: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#EEF',
+					color: '#112',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line'
+				},
+				tdHover: {
+					whiteSpace: 'pre-line'
+					// Styles defined here will apply to all tr:hover > td,
+					//	- Be aware that "inheritable" properties (e.g. fontWeight) WILL BE INHERITED 
+				},
+				th: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#AAA',
+					color: '#000',
+					textAlign: 'left',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line',
+					backgroundImage: util.headerGradient,
+					backgroundRepeat: 'repeat-x'
+				},
+				thS: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#9B9',
+					color: '#000',
+					textAlign: 'left',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line',
+					backgroundImage: util.headerGradient,
+					backgroundRepeat: 'repeat-x'
+				},
+				thA: {
+					padding: '5px',
+					fontSize: '12px',
+					backgroundColor: '#99B',
+					color: '#000',
+					textAlign: 'left',
+					border: '1px solid #000',
+					verticalAlign: 'top',
+					fontFamily: '"Consolas","Lucida Console",Courier,mono',
+					whiteSpace: 'pre-line',
+					backgroundImage: util.headerGradient,
+					backgroundRepeat: 'repeat-x'
+				}
+			}
+		};
 
-				// Try setting this to false to save space 
-				expanded: true,
+		var tblAtt = { style: util.getStyles('table') };
+		var tdAtt = { style: util.getStyles('td') };	// standard cell attribute
+		var tdSAtt = { style: util.getStyles('tdS') };	// Selected standard cell attribute
+		var tdLAtt = { style: util.getStyles('tdL') };	// Label standard cell attribute
+		var tdAAtt = { style: util.getStyles('tdA') };	// Active Person standard cell attribute 
+		var thAtt = { style: util.getStyles('th') };	// header cell attribute
+		var thSAtt = { style: util.getStyles('thS') };	// Selected header cell attribute
+		var thAAtt = { style: util.getStyles('thA') };	// Active Person header cell attribute
+		var trHeader;
+		var eventYear = '';
+		
+		var createHeader = function (tbl, att) {
+			trHeader = util.elmnt('tr');
+			tbl.appendChild(trHeader);
+			var th = util.elmnt('th', att);
+			trHeader.appendChild(th);
+		};
 
-				forceObject: false,
-				maxDepth: 10,
-				maxArray: -1,  // default is unlimited
-				styles: {
-					array: {
-						th: {
-							backgroundColor: '#6DBD2A',
-							color: 'white',
-							whiteSpace: 'pre-line'
-						}
-					},
-					'function': {
-						th: {
-							backgroundColor: '#D82525',
-							whiteSpace: 'pre-line'
-						}
-					},
-					regexp: {
-						th: {
-							backgroundColor: '#E2F3FB',
-							color: '#000',
-							whiteSpace: 'pre-line'
-						}
-					},
-					object: {
-						th: {
-							backgroundColor: '#1F96CF',
-							whiteSpace: 'pre-line'
-						}
-					},
-					jquery: {
-						th: {
-							backgroundColor: '#FBF315',
-							whiteSpace: 'pre-line'
-						}
-					},
-					error: {
-						th: {
-							backgroundColor: 'red',
-							color: 'yellow',
-							whiteSpace: 'pre-line'
-						}
-					},
-					domelement: {
-						th: {
-							backgroundColor: '#F3801E',
-							whiteSpace: 'pre-line'
-						}
-					},
-					date: {
-						th: {
-							backgroundColor: '#A725D8',
-							whiteSpace: 'pre-line'
-						}
-					},
-					colHeader: {
-						th: {
-							backgroundColor: '#EEE',
-							color: '#000',
-							textTransform: 'uppercase',
-							whiteSpace: 'pre-line'
-						}
-					},
-					'default': {
-						table: {
-							borderCollapse: 'collapse',
-							whiteSpace: 'pre-line',
-							width: '100%'
-						},
-						td: {
-							padding: '5px',
-							fontSize: '12px',
-							backgroundColor: '#FFF',
-							color: '#222',
-							border: '1px solid #000',
-							verticalAlign: 'top',
-							fontFamily: '"Consolas","Lucida Console",Courier,mono',
-							whiteSpace: 'pre-line'
-						},
-						tdHover: {
-							whiteSpace: 'pre-line'
-							// Styles defined here will apply to all tr:hover > td,
-							//	- Be aware that "inheritable" properties (e.g. fontWeight) WILL BE INHERITED 
-						},
-						th: {
-							padding: '5px',
-							fontSize: '12px',
-							backgroundColor: '#222',
-							color: '#EEE',
-							textAlign: 'left',
-							border: '1px solid #000',
-							verticalAlign: 'top',
-							fontFamily: '"Consolas","Lucida Console",Courier,mono',
-							whiteSpace: 'pre-line',
-							backgroundImage: util.headerGradient,
-							backgroundRepeat: 'repeat-x'
-						}
+		var addTitle = function (title, att, columns) {
+			var th = util.elmnt('th', att);
+			if (columns > 1) {
+				th.colSpan = columns;
+			}
+			th.innerHTML = title;
+			trHeader.appendChild(th);
+		};
+
+		var appendCell = function (row, value, att) {
+			var cell = util.elmnt('td', att);
+			cell.innerHTML = value;
+			row.appendChild(cell);
+		};
+
+		// create a row with label/value pair
+		var createRow = function (tbl, label, value, extValue, id) {
+			var tr = util.elmnt('tr');
+			if (id) {
+				tr.id = id;
+			}
+			tbl.appendChild(tr);
+			appendCell(tr, label, tdLAtt);
+			appendCell(tr, value, tdSAtt);
+			if (extValue) {
+				appendCell(tr, extValue, tdSAtt);
+			}
+			return tr;
+		};
+
+		var createEventRows = function (tbl, type, event, extValue) {
+			
+			var row;
+			if (event.date) {
+				var eventDate = slTxt.date(event.date);
+				createRow(tbl, type + 'Date', eventDate, extValue);
+				eventYear = slTxt.year(event.date);
+			}
+			if (event.place) {
+				var len = event.place.length;
+				var cnt = 0;
+				for (var i = 0; i < len; i++) {
+					if (slTxt.isValid(event.place[i])) {
+						createRow(tbl, type + 'Place' + (++cnt), event.place[i], extValue);
 					}
 				}
-			},
-			settings: undefined
+			}
+		};
+
+		// create rows from label/obj pair 
+		var createRows = function (tbl, label, obj, extValue) {
+			if (obj.date || obj.place) {
+				createEventRows(tbl, label, obj, extValue);
+			}
 		};
 
 
+/*
+		var getRow = function (tbl,label) {
+			return document.getElementById(label);
+		};
 
-		slTbl.viewSrcs = function (person,sourceId) {
+
+		var addCell = function (tr, which, value) {
+			for (var i = tr.cells.length - 1; i <= which; ++i) {
+				tr.insertCell(-1);
+			}
+			tr.cells[i] = value;
+		};
+*/
+
+		var skipEvent = ['birth'];
+
+		var eventIsUnique = function (source, srcPerson, type) {
+			if (skipEvent.indexOf(type) >= 0) {
+				return false;
+			}
+			if (source.event) {
+				if (srcPerson && srcPerson[type]) {
+					return false;
+				}
+				return true;
+			}
+			return false;
+		};
+
+		var skipProps = ['key', 'id', 'name', 'type', 'country', 'url', 'added'];
+
+		var skipProp = function (prop) {
+			if (skipProps.indexOf(prop) >= 0 ||
+				(prop.indexOf('father') === 0) ||
+				(prop.indexOf('mother') === 0) ||
+				(prop.indexOf('place') === 0)) {
+				return true;
+			}
+			return false;
+		};
+
+		var setRows = function (person, source, tbl, extValue) {
+			var type;
+			var row;
+			if (source.type) {
+				type = slTxt.toCamelCase(source.type);
+				if (source.title.toLowerCase().indexOf(type) < 0) {
+					createRow(tbl, 'eventType', source.type, extValue);
+				}
+			}
+			var srcPerson;
+			if (source.attPeople) {
+				srcPerson = source.attPeople.get(person.id);
+			}
+			eventYear = '';
+			if (eventIsUnique(source, srcPerson, type)) {
+				createEventRows(tbl, type ? type : 'event', source.event, extValue);
+			}
+			if (srcPerson) {
+				if (srcPerson.name) {
+					if (srcPerson.name[1]) {
+						createRow(tbl, '$urName', srcPerson.name[1], extValue);
+					}
+					if (srcPerson.name[0]) {
+						createRow(tbl, 'givenName', srcPerson.name[0], extValue);
+					}
+				}
+			}
+			var foundRelation = false;
+			for (var prop in srcPerson) {
+				if (srcPerson.hasOwnProperty(prop)) {
+					if (skipProp(prop)) {
+						continue;
+					}
+					var info = srcPerson[prop];
+					if (prop.indexOf('relation') === 0) {
+						if (foundRelation) {
+							continue;
+						}
+						foundRelation = true;
+						createRow(tbl, 'relation', info, extValue);
+						continue;
+					}
+					
+					var infoType = typeof info;
+					if (infoType !== 'object') {
+						createRow(tbl, prop, info, extValue);
+
+					} else {
+						createRows(tbl, prop, info, extValue);
+					}
+				}
+			}
+		};
+
+		var incrCellCnt = function (cell, which) {
+			var cnt;
+			if (which === undefined) {
+				cnt = Number(cell.innerHTML);
+				cell.innerHTML = ++cnt;
+			} else {
+				var cellText = cell.innerHTML;
+				var entries = cellText.split('<br>');
+				cnt = Number(entries[which]);
+				entries[which] = (++cnt).toString();
+				cell.innerHTML = entries.join('<br>');
+			}
+		};
+
+		var cellContainsValue = function (cellText, value) {
+			var entries = cellText.split('<br>');
+			return entries.indexOf(value);
+		};
+
+		var updateCell = function (cells, idx, value, matchOnly) {
+			if (cells[idx].innerHTML === value) {
+				incrCellCnt(cells[idx + 1]);
+			} else {
+				if (matchOnly) {
+					return false;
+				}
+				var which = cellContainsValue(cells[idx].innerHTML, value);
+				if (which >= 0) {
+					incrCellCnt(cells[idx + 1],which);
+				} else {
+					cells[idx].innerHTML += '<br>' + value;
+					cells[idx + 1].innerHTML += '<br>1';
+				}
+			}
+			return true;
+		};
+
+		// create a row with label/value pair
+		var updateRow = function (tbl, rowIdx, label, value, matchOnly) {
+			var rows = tbl.rows;
+			var rlen = rows.length;
+			for (var i = rowIdx; i < rlen; i++) {
+				var row = rows[i];
+				var cells = row.cells;
+				if (cells[0].innerHTML === label) {
+					if (updateCell(cells, 1, value, matchOnly)) {
+						rowIdx = i + 1;
+						return rowIdx;
+					}
+				}
+			}
+			createRow(tbl, label, value, 1);
+			return rowIdx;
+		};
+
+		var updateEventRows = function (tbl, rowIdx, type, event, extValue) {
+			if (event.date) {
+				var eventDate = slTxt.date(event.date);
+				rowIdx = updateRow(tbl, rowIdx, type + 'Date', eventDate, extValue);
+				eventYear = slTxt.year(event.date);
+			}
+			if (event.place) {
+				var len = event.place.length;
+				var cnt = 0;
+				for (var i = 0; i < len; i++) {
+					if (slTxt.isValid(event.place[i])) {
+						rowIdx = updateRow(tbl, rowIdx, type + 'Place' + (++cnt), event.place[i], extValue);
+					}
+				}
+			}
+			return rowIdx;
+		};
+
+		// create rows from label/obj pair 
+		var updateRows = function (tbl, rowIdx, label, obj) {
+			if (obj.date || obj.place) {
+				rowIdx = updateEventRows(tbl, rowIdx, label, obj);
+			}
+			return rowIdx;
+		};
+
+		// update reference source rows with other sources in the
+		// same source group.  Either alternate values are listed
+		// within the same row OR a confirmation count will be incremented
+		// at the end of equal values and displayed within square brackets
+		var updateRef = function (person, source, tbl) {
+			var rowIdx = 0;
+			var srcPerson;
+			if (source.attPeople) {
+				srcPerson = source.attPeople.get(person.id);
+			}
+			var type;
+			if (source.type) {
+				type = slTxt.toCamelCase(source.type);
+			}
+			if (eventIsUnique(source, srcPerson, type)) {
+				rowIdx = updateEventRows(tbl, rowIdx, type ? type : 'event', source.event);
+			}
+			if (srcPerson) {
+				if (srcPerson.name) {
+					if (srcPerson.name[1]) {
+						rowIdx = updateRow(tbl, rowIdx, '$urName', srcPerson.name[1]);
+					}
+					if (srcPerson.name[0]) {
+						rowIdx = updateRow(tbl, rowIdx, 'givenName', srcPerson.name[0]);
+					}
+				}
+			}
+			var foundRelation = false;
+			for (var prop in srcPerson) {
+				if (srcPerson.hasOwnProperty(prop)) {
+					if (skipProp(prop)) {
+						continue;
+					}
+					var info = srcPerson[prop];
+					if (prop.indexOf('relation') === 0) {
+						if (foundRelation) {
+							continue;
+						}
+						foundRelation = true;
+						updateRow(tbl, rowIdx, 'relation', info);
+						continue;
+					}
+
+					var infoType = typeof info;
+					if (infoType !== 'object') {
+						updateRow(tbl, rowIdx, prop, info);
+					} else {
+						updateRows(tbl, rowIdx, prop, info);
+					}
+				}
+			}
+		};
+
+		var updatePeopleRows = function (person, source, tbl, rowIdx) {
+			var surName = person.name ? person.name[1] : undefined;
+			var len = source.people.length;
+			for (var i = 0; i < len; i++) {
+				var srcPerson = source.people[i];
+				if (srcPerson.id !== person.id) {
+					updatePersonRow(source.people[i], surName, tbl, rowIdx);
+				}
+			}
+		};
+
+		var birthYear = function(person) {
+			var year;
+			if (person.birth && person.birth.date) {
+				year = slTxt.year(person.birth.date);
+				if (slTxt.isValid(year)) {
+					return year;
+				}
+			}
+			if (person.age) {
+				return eventYear - person.age;
+			}
+			return undefined;
+		};
+
+		var birthPlace = function(person) {
+			if (person.birth && person.birth.place) {
+				var txt = [''];
+				slTxt.addPlace(person.birth.place,txt);
+				return txt[0];
+			}
+			if (person.birthPlace) {
+				return person.birthPlace;
+			}
+			return undefined;
+		};
+
+		var genderLabel = function(gender) {
+			if (gender) {
+				if (gender === 'M') {
+					return 'male';
+				}
+				if (gender === 'F') {
+					return 'female';
+				}
+			}
+			return 'person';
+		};
+
+		var personText = function (person, surName) {
+			var txt = '';
+			if (person.name) {
+				if (typeof person.name === 'string') {
+					var snLoc = person.name.lastIndexOf(surName);
+					if (snLoc > 0) {
+						txt += person.name.substring(0, snLoc) + '$ ';
+					} else {
+						txt += person.name + ' ';
+					}
+				} else {
+					txt += person.name[0];
+					if (txt.length > 0) {
+						txt += ' ';
+					}
+					if (person.name[1]) {
+						if (surName &&
+							person.name[1] === surName) {
+							txt += '$ ';
+						} else {
+							txt += person.name[1] + ' ';
+						}
+					}
+				}
+				var bY = birthYear(person, eventYear);
+				if (bY) {
+					txt += bY + ' ';
+				}
+				var bp = birthPlace(person);
+				if (bp) {
+					txt += ' ' + bp;
+				}
+			}
+			return txt;
+		};
+
+		var setPersonRow = function (person, surName, tbl, extValue) {
+			// relation: name, gender, birthYear, birthPlace
+			var label = person.relation ? person.relation : genderLabel(person.gender);
+			var txt = personText(person,surName);
+			createRow(tbl, label, txt, extValue, person.id);
+		};
+
+		var updatePersonRow = function (person, surName, tbl, rowIdx) {
+			// relation: name, gender, birthYear, birthPlace
+			var txt = personText(person, surName);
+			if (person.id) {
+				var row = document.getElementById(person.id);
+				if (row) {
+					updateCell(row.cells, 1, txt);
+					return;
+				}
+			}
+			var label = person.relation ? person.relation : genderLabel(person.gender);
+			updateRow(tbl, rowIdx, label, txt, true);
+		};
+
+		var setPeopleRows = function (person, source, tbl, extValue) {
+			var surName = person.name ? person.name[1] : undefined;
+			var len = source.people.length;
+			for (var i = 0; i < len; i++) {
+				var srcPerson = source.people[i];
+				if (srcPerson.id !== person.id) {
+					setPersonRow(source.people[i], surName, tbl, extValue);
+				}
+			}
+		};
+
+		var showRefSources = function (tbl, person, sources, title) {
+			var len = sources.length;
+			var extValue = len > 1 ? 1 : undefined;
+			var thead = util.elmnt('thead', thSAtt);
+			var tbody = util.elmnt('tbody');
+			tbl.appendChild(thead);
+			createHeader(thead, thAtt);
+			addTitle(title, thSAtt, len > 1 ? 2 : 1);
+			tbl.appendChild(tbody);
+			var i;
+			setRows(person, sources[0], tbody, extValue);
+			for (i = 1; i < len; i++) {
+				updateRef(person, sources[i], tbody);
+			}
+			var rowIdx = tbody.rows.length;
+			setPeopleRows(person, sources[0], tbody, extValue);
+			for (i = 1; i < len; i++) {
+				updatePeopleRows(person, sources[i], tbody, rowIdx);
+			}
+		};
+
+		var showFamTree = function (tbl, person) {
+
+		};
+		
+
+		slTbl.sourceGrp = function (person, srcGrp, slSrc) {
+			var sources = slSrc.grpToSources(srcGrp);
+			var title = slSrc.title(sources[0], sources.length);
+			slTxt.view();
+			var disp = slTxt.underDisp();
+			var container = util.elmnt('div');
+			var tbl = util.elmnt('table', tblAtt);
+			container.appendChild(tbl);
+			disp.append(container);
+			showRefSources(tbl, person, sources, title);
+			showFamTree(tbl, person);
+		};
+
+		slTbl.viewSrcs = function (person,sourceId,slSrc) {
 			//
 			//  person:		person sources are attached to					
 			//  sourceId:	source which is compared to person's
 			//				information as well as all other sources
 
-			/*var source = */slSrc.get(sourceId);
-/*
-			options = options || {};
+			var source = slSrc.get(sourceId);
 
-			var settings = util.merge({}, prettyPrintThis.config, options),
-				container = util.el('div'),
-//				config = prettyPrintThis.config,
-				currentDepth = 0,
-				stack = {},
-				hasRunOnce = false;
-
-			// Expose per-call settings.
-			//   Note: "config" is overwritten (where necessary) by options/"settings"
-			//   So, if you need to access/change *DEFAULT* settings then go via ".config" 
-			prettyPrintThis.settings = settings;
-
-			var typeDealer = {
-				string: function (item) {
-					return util.txt('"' + util.shorten(item.replace(/"/g, '\\"')) + '"');
-				},
-				number: function (item) {
-					return util.txt(item);
-				},
-				regexp: function (item) {
-
-					var miniTable = util.table(['RegExp', null], 'regexp');
-					var flags = util.table();
-					var span = util.expander(
-						'/' + item.source + '/',
-						'Click to show more',
-						function () {
-							this.parentNode.appendChild(miniTable.node);
-						}
-					);
-
-					flags
-						.addRow(['g', item.global])
-						.addRow(['i', item.ignoreCase])
-						.addRow(['m', item.multiline]);
-
-					miniTable
-						.addRow(['source', '/' + item.source + '/'])
-						.addRow(['flags', flags.node])
-						.addRow(['lastIndex', item.lastIndex]);
-
-					return settings.expanded ? miniTable.node : span;
-				},
-				domelement: function (element) {
-
-					var miniTable = util.table(['DOMElement', null], 'domelement'),
-						props = ['id', 'className', 'innerHTML', 'src', 'href'], elname = element.nodeName || '';
-
-					miniTable.addRow(['tag', '&lt;' + elname.toLowerCase() + '&gt;']);
-
-					util.forEach(props, function (prop) {
-						if (element[prop]) {
-							miniTable.addRow([prop, util.htmlentities(element[prop])]);
-						}
-					});
-
-					return settings.expanded ? miniTable.node : util.expander(
-						'DOMElement (' + elname.toLowerCase() + ')',
-						'Click to show more',
-						function () {
-							this.parentNode.appendChild(miniTable.node);
-						}
-					);
-				},
-				domnode: function (node) {
-
-					// Deals with all DOMNodes that aren't elements (nodeType !== 1) 
-					var miniTable = util.table(['DOMNode', null], 'domelement'),
-						data = util.htmlentities((node.data || 'UNDEFINED').replace(/\n/g, '\\n'));
-					miniTable
-						.addRow(['nodeType', node.nodeType + ' (' + node.nodeName + ')'])
-						.addRow(['data', data]);
-
-					return settings.expanded ? miniTable.node : util.expander(
-						'DOMNode',
-						'Click to show more',
-						function () {
-							this.parentNode.appendChild(miniTable.node);
-						}
-					);
-				},
-				jquery: function (obj, depth, key) {
-					return typeDealer['array'](obj, depth, key, true);
-				},
-				object: function (obj, depth, key) {
-
-					// Checking depth + circular refs 
-					// Note, check for circular refs before depth; just makes more sense 
-					var stackKey = util.within(stack).is(obj);
-					if (stackKey) {
-						return util.common.circRef(obj, stackKey, settings);
-					}
-					stack[key || 'TOP'] = obj;
-					if (depth === settings.maxDepth) {
-						return util.common.depthReached(obj, settings);
-					}
-
-					var table = util.table(['Object', null], 'object'),
-						isEmpty = true;
-
-					for (var i in obj) {
-						if (!obj.hasOwnProperty || obj.hasOwnProperty(i)) {
-							var item = obj[i],
-								type = util.type(item);
-							isEmpty = false;
-							try {
-								table.addRow([i, typeDealer[type](item, depth + 1, i)], type);
-							} catch (e) {
-								// Security errors are thrown on certain Window/DOM properties 
-								if (window.console && window.console.log) {
-									console.log(e.message);
-								}
-							}
-						}
-					}
-
-					if (isEmpty) {
-						table.addRow(['<small>[empty]</small>']);
-					} else {
-						table.thead.appendChild(
-							util.hRow(['key', 'value'], 'colHeader')
-						);
-					}
-
-					var ret = (settings.expanded || hasRunOnce) ? table.node : util.expander(
-						util.stringify(obj),
-						'Click to show more',
-						function () {
-							this.parentNode.appendChild(table.node);
-						}
-					);
-
-					hasRunOnce = true;
-
-					return ret;
-
-				},
-				array: function (arr, depth, key, jquery) {
-
-					// Checking depth + circular refs 
-					// Note, check for circular refs before depth; just makes more sense 
-					var stackKey = util.within(stack).is(arr);
-					if (stackKey) {
-						return util.common.circRef(arr, stackKey);
-					}
-					stack[key || 'TOP'] = arr;
-					if (depth === settings.maxDepth) {
-						return util.common.depthReached(arr);
-					}
-
-					// Accepts a table and modifies it 
-					var me = jquery ? 'jQuery' : 'Array', table = util.table([me + '(' + arr.length + ')', null], jquery ? 'jquery' : me.toLowerCase()),
-						isEmpty = true,
-						count = 0;
-
-					if (jquery) {
-						table.addRow(['selector', arr.selector]);
-					}
-
-					util.forEach(arr, function (item, i) {
-						if (settings.maxArray >= 0 && ++count > settings.maxArray) {
-							table.addRow([
-								i + '..' + (arr.length - 1),
-								typeDealer[util.type(item)]('...', depth + 1, i)
-							]);
-							return false;
-						}
-						isEmpty = false;
-						table.addRow([i, typeDealer[util.type(item)](item, depth + 1, i)]);
-					});
-
-					if (!jquery) {
-						if (isEmpty) {
-							table.addRow(['<small>[empty]</small>']);
-						} else {
-							table.thead.appendChild(util.hRow(['index', 'value'], 'colHeader'));
-						}
-					}
-
-					return settings.expanded ? table.node : util.expander(
-						util.stringify(arr),
-						'Click to show more',
-						function () {
-							this.parentNode.appendChild(table.node);
-						}
-					);
-
-				},
-				'function': function (fn, depth, key) {
-
-					// Checking JUST circular refs 
-					var stackKey = util.within(stack).is(fn);
-					if (stackKey) { return util.common.circRef(fn, stackKey); }
-					stack[key || 'TOP'] = fn;
-
-					var miniTable = util.table(['Function', null], 'function'),
-						//argsTable = util.table(['Arguments']),
-						args = fn.toString().match(/\((.+?)\)/),
-						body = fn.toString().match(/\(.*?\)\s+?\{?([\S\s]+)/)[1].replace(/\}?$/, '');
-
-					miniTable
-						.addRow(['arguments', args ? args[1].replace(/[^\w_,\s]/g, '') : '<small>[none/native]</small>'])
-						.addRow(['body', body]);
-
-					return settings.expanded ? miniTable.node : util.expander(
-						'function(){...}',
-						'Click to see more about this function.',
-						function () {
-							this.parentNode.appendChild(miniTable.node);
-						}
-					);
-				},
-				'date': function (date) {
-
-					var miniTable = util.table(['Date', null], 'date'),
-						sDate = date.toString().split(/\s/);
-
-					// TODO: Make this work well in IE! 
-					miniTable
-						.addRow(['Time', sDate[4]])
-						.addRow(['Date', sDate.slice(0, 4).join('-')]);
-
-					return settings.expanded ? miniTable.node : util.expander(
-						'Date (timestamp): ' + (+date),
-						'Click to see a little more info about this date',
-						function () {
-							this.parentNode.appendChild(miniTable.node);
-						}
-					);
-
-				},
-				'boolean': function (bool) {
-					return util.txt(bool.toString().toUpperCase());
-				},
-				'undefined': function () {
-					return util.txt('UNDEFINED');
-				},
-				'null': function () {
-					return util.txt('NULL');
-				},
-				'default': function () {
-					// When a type cannot be found 
-					return util.txt('viewSrcs: TypeNotFound Error');
-				}
-			};
-
-			container.appendChild(typeDealer[(settings.forceObject) ? 'object' : util.type(obj)](obj, currentDepth));
-
-			return container;
-*/
 		};
 
 		return slTbl;

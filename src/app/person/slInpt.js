@@ -16,7 +16,7 @@
 
 
 	// Handle mouse events
-	slApp.factory('slInpt', ['$window','$state', 'slCtx2', 'slActv', 'slSel', 'slAnlz', 'slSrc', 'alert',
+	slApp.factory('slInpt', ['$window', '$state', 'slCtx2', 'slActv', 'slSel', 'slAnlz', 'slSrc', 'alert',
 		function ($window, $state, slCtx2, slActv, slSel, slAnlz, slSrc, alert) {
 			var slInpt = {};
 

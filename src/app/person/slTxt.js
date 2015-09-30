@@ -81,6 +81,16 @@
 			return path.substring(start + 1,path.length);
 		};
 
+		// if string find exists in txt then return string
+		// that containes everything after find in txt.
+		slTxt.clipAfter = function (txt, find) {
+			var loc = txt.indexOf(find);
+			if (loc >= 0) {
+				return txt.substring(loc + find.length);
+			}
+			return txt;
+		};
+
 		//================================================================
 		// event interface methods
 		var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -109,9 +119,9 @@
 			if (!date2) {
 				return -1000;
 			}
-			var d1 = date1.end ? date1.end : 
+			var d1 = date1.to ? date1.to : 
 				(date1.about ? date1.about : date1);
-			var d2 = date2.end ? date2.end :
+			var d2 = date2.to ? date2.to :
 				(date2.about ? date2.about : date2);
 			var diff = d1.length - d2.length;
 			if (diff === 0) {
@@ -186,6 +196,23 @@
 			return results;
 		};
 
+		slTxt.nameToString = function (name) {
+			if (typeof name === 'string') {
+				return name;
+			}
+			var txt = '';
+			if (name[0]) {
+				txt = name[0];
+			}
+			if (name[1]) {
+				if (txt && txt.length > 0) {
+					txt += ' ';
+				}
+				txt += name[1];
+			}
+			return txt;
+		};
+
 		var splitSingleDate = function (date) {
 			var parts = separateAlphaFromNumeric(date);
 			var lastEntry = parts[parts.length - 1];
@@ -231,11 +258,20 @@
 			if (!slTxt.isValid(date)) {
 				return undefined;
 			}
-			var found = date.toLowerCase().indexOf('about');
+			var dateLC = date.toLowerCase();
+			var found = dateLC.indexOf('about');
 			if (found >= 0) {
-				var about = date.substring(found + 5, date.length);
+				var about = date.substring(found + 6);
 				return {
 					about: splitSingleDate(about)
+				};
+			}
+			found = dateLC.indexOf('from');
+			var foundTo = dateLC.indexOf('to');
+			if (found >= 0 && foundTo >= 0) {
+				return {
+					from: splitSingleDate(date.substring(found + 5,foundTo)),
+					to: splitSingleDate(date.substring(foundTo + 1))
 				};
 			}
 			var range = date.split('-');
@@ -265,6 +301,57 @@
 				retVal += date[0] + ' ?';
 			}
 			return retVal;
+		};
+
+		slTxt.year = function (date) {
+			if (date) {
+				if (date.to) {
+					if (date.to.length > 2) {
+						return date.to[2].toString();
+					}
+					if (date.from && date.from.length > 2) {
+						return date.from[2].toString();
+					}
+				} else if (date.about) {
+					date = date.about;
+				}
+				if (date.length > 2) {
+					return date[2].toString();
+				}
+			}
+			return '';
+		};
+
+		slTxt.simpleDate = function (date) {
+			var dm = slTxt.dayMonth(date);
+			var year = slTxt.year(date);
+			if (dm.length > 0) {
+				if (year.length > 0) {
+					return dm + ' ' + year;
+				}
+				return dm;
+			} else {
+				if (year.length > 0) {
+					return year;
+				}
+			}
+			return '';
+		};
+
+
+		slTxt.date = function (date) {
+			var txt = '';
+			if (date.to) {
+				// display as range
+				txt += slTxt.simpleDate(date.from);
+				txt += '-';
+				txt += slTxt.simpleDate(date.to);
+			} else if (date.about) {
+				txt += 'abt ' + slTxt.simpleDate(date.about);
+			} else {
+				txt += slTxt.simpleDate(date);
+			}
+			return txt;
 		};
 
 			
@@ -309,8 +396,7 @@
 					if (added) {
 						txtA[0] += ', ';
 					}
-					txtA[0] += '?';
-					added = true;
+					added = false;
 				}
 			}
 			if (stateCtry) {
@@ -345,15 +431,31 @@
 			}).join('');
 		};
 
+		slTxt.view = function () {
+			angular.element(document.getElementById('canvas1')).attr('hidden', true);
+			angular.element(document.getElementById('canvas2')).attr('hidden', true);
+			angular.element(document.getElementById('underlay')).removeAttr('hidden');
+		};
+
+		slTxt.underDisp = function () {
+			return angular.element(document.getElementById('underDisplay'));
+		};
+
+		slTxt.stripTitle = function (title) {
+			title = title.replace(/[.,]/g, '');	// remove punctuation
+			title = title.replace(/\d+\-\d+/g, '');	// remove numbers
+			title = title.replace(/Index/g, ''); // remove 'Index'
+			title = slTxt.trimEndSpace(title);
+			return title;
+		};
+
 
 		slTxt.pprint = function (label, data) {
 			// return;
 			var msg = label ? '<h3>' + label + '<h3>' : '<hr>';
 			var tbl = data ? slPpr.prettyPrint(data) : '';
-			angular.element(document.getElementById('canvas1')).attr('hidden', true);
-			angular.element(document.getElementById('canvas2')).attr('hidden', true);
-			angular.element(document.getElementById('underlay')).removeAttr('hidden');
-			angular.element(document.getElementById('underDisplay')).append(msg, tbl);
+			slTxt.view();
+			slTxt.underDisp().append(msg, tbl);
 		};
 
 		return slTxt;

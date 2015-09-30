@@ -19,16 +19,16 @@
   "eqnull": true,
   "sub": true,
   "globals": {
-    "angular": false,
     "_": false,
+    "alert": false,
+    "angular": false,
     "console": false,
-    "window": false,
     "document": false,
     "Image": false,
-    "alert": false,
+    "Map": false,
     "prompt": false,
     "setTimeout": false,
     "sweetAlert": false,
-    "Map":  false
+    "window": false
   }
 }
