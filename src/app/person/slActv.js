@@ -9,6 +9,37 @@
 			var personId;	// id of active person
 			var processFamiliesCount = 0;
 			var returnProcessFamiliesCount = 0;
+			
+			// Keep track of busy state using a counter
+			var busyCnt = 0;
+			// functions to execute when no longer busy
+			var busyQueue = [];
+
+			slActv.addBusyQueue = function(func,args) {
+				if (busyCnt === 0) {
+					func(args);
+				} else {
+					if (busyQueue.length === 0) {
+						slTxt.pushMsg('Waiting for data to load');
+					}
+					busyQueue.push([func, args]);
+				}
+			};
+
+			var runBusyQueue = function() {
+				var len = busyQueue.length;
+				if (len > 0) {
+					slTxt.popMsg();
+					for (var i = 0; i < len; i++) {
+						var funcarg = busyQueue[i];
+						funcarg[0](funcarg[1]);
+					}
+					busyQueue.length = 0;
+					
+				}
+			};
+
+
 
 			slActv.who = function () {
 				return slPpl.getPerson(personId);
@@ -23,8 +54,6 @@
 				angular.element(document.getElementById('navbar-busy')).attr('hidden', true);
 			};
 
-			// Keep track of busy state using a counter
-			var busyCnt = 0;
 			slActv.incrBusy = function () {
 				if (++busyCnt === 1) {
 					slActv.isBusy();
@@ -36,11 +65,13 @@
 					slActv.redraw();
 //					slSrc.dumpEval();
 					slActv.notBusy();
+					runBusyQueue();
 				}
 				if (busyCnt < 0) {
 					alert('busyCnt has gone negetive.');
 				}
 			};
+			
 
 			var getSpouseFamilies = function (pwr) {
 				// first gather all of the couple relationships

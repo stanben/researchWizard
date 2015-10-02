@@ -389,8 +389,32 @@
 			return tr;
 		};
 
+		var createEventPlace = function (place,extValue) {
+			var len = place.length;
+			var cnt = 0;
+			var placeTxt = '';
+			var extTxt = '';
+			for (var i = 0; i < len; i++) {
+				if (slTxt.isValid(place[i])) {
+					if (placeTxt.length > 0) {
+						placeTxt += '<br>';
+						if (extValue) {
+							extTxt += '<br>';
+						}
+					}
+					placeTxt += place[i];
+					if (extValue) {
+						extTxt += extValue;
+					}
+				}
+			}
+			return {
+				txt: placeTxt,
+				ext: extTxt
+			};
+		};
+
 		var createEventRows = function (tbl, type, event, extValue) {
-			
 			var row;
 			if (event.date) {
 				var eventDate = slTxt.date(event.date);
@@ -398,13 +422,8 @@
 				eventYear = slTxt.year(event.date);
 			}
 			if (event.place) {
-				var len = event.place.length;
-				var cnt = 0;
-				for (var i = 0; i < len; i++) {
-					if (slTxt.isValid(event.place[i])) {
-						createRow(tbl, type + 'Place' + (++cnt), event.place[i], extValue);
-					}
-				}
+				var place = createEventPlace(event.place,extValue);
+				createRow(tbl, type + 'Place', place.txt, extValue ? place.ext : extValue);
 			}
 		};
 
@@ -457,14 +476,15 @@
 			return false;
 		};
 
-		var setRows = function (person, source, tbl, extValue) {
+		var setRows = function (person, source, title, tbl, extValue) {
 			var type;
 			var row;
 			if (source.type) {
-				type = slTxt.toCamelCase(source.type);
-				if (source.title.toLowerCase().indexOf(type) < 0) {
+				type = slTxt.groupType(source.type);
+				if (title.toLowerCase().indexOf(type.toLowerCase()) < 0) {
 					createRow(tbl, 'eventType', source.type, extValue);
 				}
+				type = slTxt.toCamelCase(type);
 			}
 			var srcPerson;
 			if (source.attPeople) {
@@ -527,69 +547,109 @@
 
 		var cellContainsValue = function (cellText, value) {
 			var entries = cellText.split('<br>');
-			return entries.indexOf(value);
+			var first = entries.indexOf(value);
+			if (first >= 0) {
+				var last = entries.lastIndexOf(value);
+				if (first === last) {
+					return [first];
+				} else {
+					return [first,last];
+				}
+			}
+			return [first];
+		};
+
+		var addCellLine = function (cell, where, value) {
+			var str = cell.innerHTML;
+			if (where === 0) {
+				if (str.length > 0) {
+					cell.innerHTML = value + '<br>' + str;
+				} else {
+					cell.innerHTML = value;
+				}
+			} else {
+				var loc = slTxt.getNthPosition(str, '<br>', where);
+				cell.innerHTML = slTxt.splice(str, loc, 0, '<br>' + value);
+			}
 		};
 
 		var updateCell = function (cells, idx, value, matchOnly) {
-			if (cells[idx].innerHTML === value) {
+			var entries = value.split('<br>');
+			if (entries.length === 1 && cells[idx].innerHTML === value) {
 				incrCellCnt(cells[idx + 1]);
 			} else {
-				if (matchOnly) {
+				if (matchOnly && entries.length === 1) {
 					return false;
 				}
-				var which = cellContainsValue(cells[idx].innerHTML, value);
-				if (which >= 0) {
-					incrCellCnt(cells[idx + 1],which);
-				} else {
-					cells[idx].innerHTML += '<br>' + value;
-					cells[idx + 1].innerHTML += '<br>1';
+				var lastWhich = -1;
+				var len = entries.length;
+				for (var i = 0; i < len; i++) {
+					var which = cellContainsValue(cells[idx].innerHTML, entries[i]);
+					if (which[0] >= 0 || len > 1) {
+						if (which[0] <= lastWhich) {
+							if (which.length > 1) {
+								incrCellCnt(cells[idx + 1], which[1]);
+								lastWhich = which[1];
+							} else {
+								++lastWhich;
+								addCellLine(cells[idx], lastWhich, entries[i]);
+								addCellLine(cells[idx + 1], lastWhich, '1');
+							}
+						} else {
+							incrCellCnt(cells[idx + 1], which[0]);
+							lastWhich = which[0];
+						} 
+					} else {
+						cells[idx].innerHTML += '<br>' + entries[i];
+						cells[idx + 1].innerHTML += '<br>1';
+					}
 				}
 			}
 			return true;
 		};
 
-		// create a row with label/value pair
-		var updateRow = function (tbl, rowIdx, label, value, matchOnly) {
+		var findRow = function (tbl, label) {
 			var rows = tbl.rows;
 			var rlen = rows.length;
-			for (var i = rowIdx; i < rlen; i++) {
+			for (var i = 0; i < rlen; i++) {
 				var row = rows[i];
 				var cells = row.cells;
 				if (cells[0].innerHTML === label) {
-					if (updateCell(cells, 1, value, matchOnly)) {
-						rowIdx = i + 1;
-						return rowIdx;
-					}
+					return row;
+				}
+			}
+			return undefined;
+		};
+
+		// create a row with label/value pair
+		var updateRow = function (tbl, label, value, matchOnly) {
+			var row = findRow(tbl,label);
+			if (row) {
+				var cells = row.cells;
+				if (updateCell(cells, 1, value, matchOnly)) {
+					return;
 				}
 			}
 			createRow(tbl, label, value, 1);
-			return rowIdx;
 		};
 
-		var updateEventRows = function (tbl, rowIdx, type, event, extValue) {
+		var updateEventRows = function (tbl, type, event, extValue) {
 			if (event.date) {
 				var eventDate = slTxt.date(event.date);
-				rowIdx = updateRow(tbl, rowIdx, type + 'Date', eventDate, extValue);
+				updateRow(tbl, type + 'Date', eventDate, extValue);
 				eventYear = slTxt.year(event.date);
 			}
 			if (event.place) {
-				var len = event.place.length;
-				var cnt = 0;
-				for (var i = 0; i < len; i++) {
-					if (slTxt.isValid(event.place[i])) {
-						rowIdx = updateRow(tbl, rowIdx, type + 'Place' + (++cnt), event.place[i], extValue);
-					}
-				}
+				var place = createEventPlace(event.place, extValue);
+				updateRow(tbl, type + 'Place', place.txt, place.ext);
 			}
-			return rowIdx;
 		};
 
 		// create rows from label/obj pair 
-		var updateRows = function (tbl, rowIdx, label, obj) {
+		var updateRows = function (tbl, label, obj) {
 			if (obj.date || obj.place) {
-				rowIdx = updateEventRows(tbl, rowIdx, label, obj);
+				updateEventRows(tbl, label, obj);
 			}
-			return rowIdx;
 		};
 
 		// update reference source rows with other sources in the
@@ -597,25 +657,25 @@
 		// within the same row OR a confirmation count will be incremented
 		// at the end of equal values and displayed within square brackets
 		var updateRef = function (person, source, tbl) {
-			var rowIdx = 0;
 			var srcPerson;
 			if (source.attPeople) {
 				srcPerson = source.attPeople.get(person.id);
 			}
 			var type;
 			if (source.type) {
-				type = slTxt.toCamelCase(source.type);
+				type = slTxt.groupType(source.type);
+				type = slTxt.toCamelCase(type);
 			}
 			if (eventIsUnique(source, srcPerson, type)) {
-				rowIdx = updateEventRows(tbl, rowIdx, type ? type : 'event', source.event);
+				updateEventRows(tbl, type ? type : 'event', source.event);
 			}
 			if (srcPerson) {
 				if (srcPerson.name) {
 					if (srcPerson.name[1]) {
-						rowIdx = updateRow(tbl, rowIdx, '$urName', srcPerson.name[1]);
+						updateRow(tbl, '$urName', srcPerson.name[1]);
 					}
 					if (srcPerson.name[0]) {
-						rowIdx = updateRow(tbl, rowIdx, 'givenName', srcPerson.name[0]);
+						updateRow(tbl, 'givenName', srcPerson.name[0]);
 					}
 				}
 			}
@@ -631,27 +691,27 @@
 							continue;
 						}
 						foundRelation = true;
-						updateRow(tbl, rowIdx, 'relation', info);
+						updateRow(tbl, 'relation', info);
 						continue;
 					}
 
 					var infoType = typeof info;
 					if (infoType !== 'object') {
-						updateRow(tbl, rowIdx, prop, info);
+						updateRow(tbl, prop, info);
 					} else {
-						updateRows(tbl, rowIdx, prop, info);
+						updateRows(tbl, prop, info);
 					}
 				}
 			}
 		};
 
-		var updatePeopleRows = function (person, source, tbl, rowIdx) {
+		var updatePeopleRows = function (person, source, tbl) {
 			var surName = person.name ? person.name[1] : undefined;
 			var len = source.people.length;
 			for (var i = 0; i < len; i++) {
 				var srcPerson = source.people[i];
 				if (srcPerson.id !== person.id) {
-					updatePersonRow(source.people[i], surName, tbl, rowIdx);
+					updatePersonRow(source.people[i], surName, tbl);
 				}
 			}
 		};
@@ -737,7 +797,7 @@
 			createRow(tbl, label, txt, extValue, person.id);
 		};
 
-		var updatePersonRow = function (person, surName, tbl, rowIdx) {
+		var updatePersonRow = function (person, surName, tbl) {
 			// relation: name, gender, birthYear, birthPlace
 			var txt = personText(person, surName);
 			if (person.id) {
@@ -748,7 +808,7 @@
 				}
 			}
 			var label = person.relation ? person.relation : genderLabel(person.gender);
-			updateRow(tbl, rowIdx, label, txt, true);
+			updateRow(tbl, label, txt, true);
 		};
 
 		var setPeopleRows = function (person, source, tbl, extValue) {
@@ -772,23 +832,29 @@
 			addTitle(title, thSAtt, len > 1 ? 2 : 1);
 			tbl.appendChild(tbody);
 			var i;
-			setRows(person, sources[0], tbody, extValue);
+			setRows(person, sources[0], title, tbody, extValue);
+//			slTxt.pprint(sources[0].title, sources[0]);
 			for (i = 1; i < len; i++) {
 				updateRef(person, sources[i], tbody);
+//				slTxt.pprint(sources[i].title, sources[i]);
 			}
-			var rowIdx = tbody.rows.length;
 			setPeopleRows(person, sources[0], tbody, extValue);
 			for (i = 1; i < len; i++) {
-				updatePeopleRows(person, sources[i], tbody, rowIdx);
+				updatePeopleRows(person, sources[i], tbody);
 			}
 		};
 
 		var showFamTree = function (tbl, person) {
+			addTitle('familyTree', thAAtt, 1);
 
 		};
 		
 
 		slTbl.sourceGrp = function (person, srcGrp, slSrc) {
+			var msg = 'click <strong style="padding:4px;color:#A04444;' +
+					'border: 3px solid #A04444;background-color:#FFEE66;">' +
+					'RETURN</strong> to return back to person view';
+			slTxt.pushMsg(msg);
 			var sources = slSrc.grpToSources(srcGrp);
 			var title = slSrc.title(sources[0], sources.length);
 			slTxt.view();

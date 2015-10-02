@@ -16,8 +16,8 @@
 
 
 	// Handle mouse events
-	slApp.factory('slInpt', ['$window', '$state', 'slCtx2', 'slActv', 'slSel', 'slAnlz', 'slSrc', 'alert',
-		function ($window, $state, slCtx2, slActv, slSel, slAnlz, slSrc, alert) {
+	slApp.factory('slInpt', ['$window', '$state', 'slCtx2', 'slActv', 'slSel', 'slAnlz', 'slSrc', 'slTxt', 'alert',
+		function ($window, $state, slCtx2, slActv, slSel, slAnlz, slSrc, slTxt, alert) {
 			var slInpt = {};
 
 			var highlighted;	// [grp,idx] of SR highlited when cursor enters it's area
@@ -50,16 +50,18 @@
 				slCtx2.highlite(highlighted[0],slSel.rect(highlighted));
 			};
 
-			slInpt.clear = function () {
+			slInpt.clear = function (continueSelection) {
 				if (highlighted) {
 					unHighlight();
 				}
 				if (selected) {
 					deselect();
 				}
-				slSel.clear();
 				selected = undefined;
 				highlighted = undefined;
+				if (!continueSelection) {
+					slSel.clear();
+				}
 			};
 
 
@@ -113,6 +115,8 @@
 				angular.element(document.getElementById('underlay')).attr('hidden',true);
 				angular.element(document.getElementById('canvas1')).removeAttr('hidden');
 				angular.element(document.getElementById('canvas2')).removeAttr('hidden');
+				slTxt.popMsg();
+				slInpt.clear(true);
 			};
 
 
@@ -209,7 +213,11 @@
 					if (event.ctrlKey) {
 						if (highlighted) {
 							slAnlz.deselect();
-							selectOpts[highlighted[0]]();
+							if (highlighted[0] === 0) {
+								selectOpts[highlighted[0]]();
+							} else {
+								slActv.addBusyQueue(selectOpts[highlighted[0]]);
+							}
 							return;
 						}
 					}
@@ -232,7 +240,11 @@
 					selected = highlighted;
 					if (selected) {
 						select();
-						slAnlz.select(selected);
+						if (selected[0] === 0) {
+							slAnlz.select(selected);
+						} else {
+							slActv.addBusyQueue(slAnlz.select, selected);
+						}
 					}
 				}
 			};

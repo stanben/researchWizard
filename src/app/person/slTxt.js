@@ -5,6 +5,32 @@
 	slApp.factory('slTxt', ['slPpr', 'slCtry', 'alert',
 		function (slPpr, slCtry, alert) {
 		var slTxt = {};
+		var msgQueue = [];
+
+		
+
+		var displayMsg = function () {
+			var msg = msgQueue[msgQueue.length - 1];
+			document.getElementById('navbar-msg').innerHTML = msg;
+		};
+
+		slTxt.initMsg = function () {
+			msgQueue.length = 0;
+			slTxt.pushMsg('Welcome to sourceLink! Select <i style ="color:#BEF0FF; background-color:#428BCA;">Sign In to familySearch</i> to load your family information.');
+		};
+
+		slTxt.pushMsg = function (msg) {
+			msgQueue.push(msg);
+			displayMsg();
+		};
+
+		slTxt.popMsg = function () {
+			if (msgQueue.length > 2) {
+				msgQueue.pop();
+			}
+			displayMsg();
+		};
+
 
 		//========================================================
 		// return true if string is defined and is not empty
@@ -89,6 +115,14 @@
 				return txt.substring(loc + find.length);
 			}
 			return txt;
+		};
+
+		slTxt.getNthPosition = function (txt, pattern, n) {
+			return txt.split(pattern, n).join(pattern).length;
+		};
+
+		slTxt.splice = function (str, index, howmany, add) {
+			return str.slice(0, index) + (add || '') + str.slice(index + howmany);
 		};
 
 		//================================================================
@@ -447,6 +481,38 @@
 			title = title.replace(/Index/g, ''); // remove 'Index'
 			title = slTxt.trimEndSpace(title);
 			return title;
+		};
+
+		var doNotGroup = ['CENSUS', 'VITAL', 'MISCELLANEOUS'];
+		var sameTypes = [['DEATH', 'BURIAL']];
+
+		slTxt.sameGroupType = function (type1, type2) {
+			if (type1 === type2) {
+				if (doNotGroup.indexOf(type1) < 0) {
+					return true;
+				}
+				return false;
+			}
+			var len = sameTypes.length;
+			for (var i = 0; i < len; i++) {
+				var sameType = sameTypes[i];
+				if ((sameType.indexOf(type1) >= 0) &&
+					(sameType.indexOf(type2) >= 0)) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		slTxt.groupType = function (type) {
+			var len = sameTypes.length;
+			for (var i = 0; i < len; i++) {
+				var sameType = sameTypes[i];
+				if (sameType.indexOf(type) >= 0) {
+					return sameType[0];
+				}
+			}
+			return type;
 		};
 
 

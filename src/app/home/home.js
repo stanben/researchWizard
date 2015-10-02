@@ -12,8 +12,9 @@
 		});
 	});
 
-	slApp.controller('HomeController', function ($scope, $state, $rootScope, fsApi, slUtl) {
-		var startPersonId /* = 'K422-PFX'*/;
+	slApp.controller('HomeController', function ($scope, $state, $rootScope, fsApi, slUtl, slTxt) {
+		slTxt.initMsg();
+		var startPersonId /*= 'KWZ3-ZJG'*/;
 		$scope.signIn = function () {
 			fsApi.getAccessToken().then(function() {
 				$rootScope.$emit('newSession');

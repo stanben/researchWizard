@@ -148,7 +148,7 @@
 			// return true if p1 and p2 are the same person
 			var samePerson = function(p1,p2) {
 				var diff = 0;
-                                var match;
+				var match;
 				// compare Name
 				if (p1.name && p2.name) {
 					match = nameCompare(p2.name, p1.name);
@@ -231,22 +231,6 @@
 				return sources.get(srcId);
 			};
 
-			var doNotGroup = ['CENSUS','VITAL','MISCELLANEOUS'];
-
-			var sameGroupType = function (src1, src2) {
-				if (src1.type === src2.type) {
-					if (doNotGroup.indexOf(src1.type) < 0) {
-						return true;
-					}
-					return false;
-				}
-				if ((src1.type === 'DEATH' || src1.type === 'BURIAL') &&
-					(src2.type === 'DEATH' || src2.type === 'BURIAL')) {
-					return true;
-				}
-				return false;
-			};
-
 			var sameRelationType = function (src1, src2) {
 				if (src1.relation && src2.relation) {
 					if (src1.relation !== src2.relation) {
@@ -264,7 +248,7 @@
 			};
 
 			var placeInSameGroup = function(src1,src2) {
-				return (sameGroupType(src1,src2) && sameRelationType(src1,src2));
+				return (slTxt.sameGroupType(src1.type,src2.type) && sameRelationType(src1,src2));
 			};
 
 			// return:	-1 if src1 is to be placed after src2;
@@ -892,7 +876,8 @@
 				return undefined;
 			};
 
-			var getName = function (person, data) {
+			var getNameRelation = function (data) {
+				var obj = {};
 				var nameParts;
 				var nameRelation;
 				if (data.name && data.name.length > 0) {
@@ -925,10 +910,21 @@
 							surName = nameParts[i].text;
 						}
 					}
-					person['name'] = [givenName, surName];
+					obj['name'] = [givenName, surName];
 				}
 				if (nameRelation) {
-					slUtl.setProp(person, 'relation', nameRelation.toLowerCase());
+					slUtl.setProp(obj, 'relation', nameRelation.toLowerCase());
+				}
+				return obj;
+			};
+
+			var getName = function (person, data) {
+				var nr = getNameRelation(data);
+				if (nr.name) {
+					person['name'] = nr.name;
+				}
+				if (nr.relation) {
+					slUtl.setProp(person, 'relation', nr.relation);
 				}
 			};
 
@@ -1001,12 +997,12 @@
 				var source = srcInfo.source;
 				var person;
 				var fidx = findPerson(source.people, thisPerson);
-                                var addAttPerson = thisPerson.id ? true : false;
+				var addAttPerson = thisPerson.id ? true : false;
 				if (fidx >= 0) {
 					person = source.people[fidx];
-                                        if (person.id) {
-                                            addAttPerson = false;
-                                        }
+					if (person.id) {
+						addAttPerson = false;
+					}
 					slUtl.merge(person, thisPerson);
 				} else {
 					source.people.push(thisPerson);
@@ -1081,8 +1077,8 @@
 			var loadSource = function (srcInfo) {
 				var data = srcInfo.data;
 				var sourceId = getSourceId(srcInfo);
-//				if (sourceId === '1202535') {
-//					slTxt.pprint(srcInfo.description.titles[0].value, srcInfo);
+//				if (sourceId === '1042456105') {
+//					slTxt.pprint(srcInfo.description.about + ' 1042456105 ' + srcInfo.thisPerson.id, srcInfo.data);
 //				}
 				if (sourceId) {
 					var source = slSrc.getSource(sourceId);
@@ -1239,7 +1235,7 @@
 
 			slSrc.title = function (source, length) {
 				if (length > 1) {
-					return length.toString() + ' ' + source.type + ' Records';
+					return length.toString() + ' ' + slTxt.groupType(source.type) + ' Records';
 				}
 				return slTxt.stripTitle(source.title);
 			};
@@ -1348,7 +1344,7 @@
 				}
 				msg += actPerson.name[0] + ' ' +
 					actPerson.name[1];
-				document.getElementById('navbar-msg').innerHTML = msg;
+				slTxt.pushMsg(msg);
 				return exCnt + nrCnt + noCnt;
 			};
 

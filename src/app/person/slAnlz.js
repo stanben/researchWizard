@@ -5,8 +5,8 @@
 
 	//====================================================================
 	// slAnlz - Analyze Selection
-	slApp.factory('slAnlz', ['$window', 'fsApi', 'slCtx2', 'slActv', 'slDrw', 'slSel', 'slPpl', 'slSrc', 'alert',
-		function ($window, fsApi, slCtx2, slActv, slDrw, slSel, slPpl, slSrc, alert) {
+	slApp.factory('slAnlz', ['$window', 'fsApi', 'slCtx2', 'slActv', 'slDrw', 'slSel', 'slPpl', 'slSrc', 'slTxt', 'alert',
+		function ($window, fsApi, slCtx2, slActv, slDrw, slSel, slPpl, slSrc, slTxt, alert) {
 		var slAnlz = {};
 
 		slAnlz.startNewFSPersonTab = function () {
@@ -27,9 +27,8 @@
 
 		var personIsLiving = function (person) {
 			if (person.living) {
-				var msg = 'No Attached Source for <strong>living</strong> person: ' +
-					' <strong>' + person.name[0] + ' ' + person.name[1] + '</strong>';
-				document.getElementById('navbar-msg').innerHTML = msg;
+				slTxt.pushMsg('No Attached Source for <strong>living</strong> person: ' +
+					' <strong>' + person.name[0] + ' ' + person.name[1] + '</strong>');
 				return true;
 			}
 			return false;
@@ -164,9 +163,7 @@
 		};
 
 		slAnlz.deselect = function () {
-			var msg = '<strong>click</strong> a field to confirm sources.   ' +
-					'<strong>ctrl-click</strong> to select active person';
-			document.getElementById('navbar-msg').innerHTML = msg;
+			slTxt.popMsg();
 			slSel.clearAttSel();
 			slDrw.AttSources(slActv.who().id);
 		};
@@ -213,9 +210,9 @@
 			var srcGrp = person.sources[which];
 			var len = srcGrp.length;
 			if (len > 1) {
-				document.getElementById('navbar-msg').innerHTML = 'Comparing this source group with all the others is comming soon!!!';
+				slTxt.pushMsg('Comparing this source group with all the others is comming soon!!!');
 			} else {
-				document.getElementById('navbar-msg').innerHTML = 'Comparing this source with all the others is comming soon!!!';
+				slTxt.pushMsg('Comparing this source with all the others is comming soon!!!');
 			}
 			
 		};

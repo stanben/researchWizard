@@ -28,7 +28,7 @@
 	slApp.controller('PersonController',
 		function ($scope, $state, $rootScope, person, personId, fsApi,
 			slUtl, slCtx1, slCtx2, slDrw, slPpl,
-			slInpt, slActv) {
+			slInpt, slActv, slTxt) {
 
 		/*
 		var sections = [
@@ -49,6 +49,9 @@
 		var ctx1 = canvas1.getContext('2d');
 		slCtx1.setCanvas(canvas1);
 		slCtx1.setContext(ctx1);
+
+		slTxt.pushMsg('<strong>click</strong> a field to confirm sources.   ' +
+				'<strong>ctrl-click</strong> to select active person');
 
 		angular.element(document.getElementById('description')).remove();
 		angular.element(document.getElementById('buttons')).removeAttr('hidden');
